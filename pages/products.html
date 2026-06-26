@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en-NG" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Products — TradeFlow</title>
+  <link rel="manifest" href="../manifest.json">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <style>
+    /* ── Product card (mobile grid view) ── */
+    .product-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      transition: var(--transition-base);
+      position: relative;
+      overflow: hidden;
+    }
+    .product-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+      border-color: var(--color-primary);
+    }
+    .product-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-2);
+    }
+    .product-avatar {
+      width: 42px; height: 42px;
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .product-card-name {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.35;
+    }
+    .product-card-sku {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+    .product-card-price {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+    .product-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: var(--space-2);
+      border-top: 1px solid var(--border-light);
+    }
+    .product-card-actions {
+      display: flex;
+      gap: var(--space-1);
+    }
+
+    /* Inactive product overlay */
+    .product-card.inactive {
+      opacity: 0.55;
+    }
+    .product-card.inactive::after {
+      content: 'INACTIVE';
+      position: absolute;
+      top: 10px; right: -22px;
+      background: var(--text-muted);
+      color: white;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 2px 28px;
+      transform: rotate(45deg);
+    }
+
+    /* View toggle (table/card) */
+    .view-toggle {
+      display: flex;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .view-toggle-btn {
+      padding: 0.4rem 0.75rem;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: var(--transition-fast);
+    }
+    .view-toggle-btn.active {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    /* Stock level indicator in table */
+    .stock-bar-wrapper {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .stock-bar {
+      flex: 1;
+      height: 5px;
+      background: var(--border-color);
+      border-radius: 3px;
+      overflow: hidden;
+      min-width: 60px;
+    }
+    .stock-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    /* Responsive: hide table on small screens */
+    @media (max-width: 767px) {
+      #table-view { display: none !important; }
+      #card-view  { display: grid !important; }
+    }
+    @media (min-width: 768px) {
+      #card-view  { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside id="app-sidebar" class="sidebar"></aside>
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+  <div class="app-main" id="app-main">
+    <!-- Topbar -->
+    <header class="topbar" id="app-topbar">
+      <div class="topbar-left">
+        <button class="sidebar-toggle" id="sidebar-toggle-btn" aria-label="Toggle sidebar">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <span class="topbar-title" id="topbar-title">Products</span>
+      </div>
+      <div class="topbar-right">
+        <button class="theme-toggle" aria-label="Toggle dark mode"><i class="fa-solid fa-moon"></i></button>
+        <div class="dropdown">
+          <button class="user-avatar-btn dropdown-toggle" data-bs-toggle="dropdown">
+            <div class="user-avatar" id="topbar-avatar">AU</div>
+            <span class="d-none d-md-inline" id="topbar-username">Admin</span>
+            <i class="fa-solid fa-chevron-down" style="font-size:0.65rem;color:var(--text-muted);"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><div style="padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--border-color);">
+              <div style="font-size:var(--text-sm);font-weight:600;" id="topbar-username-dd"></div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);" id="topbar-userrole"></div>
+            </div></li>
+            <li><a class="dropdown-item logout-btn" href="#"><i class="fa-solid fa-right-from-bracket me-2"></i>Sign Out</a></li>
+          </ul>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1 class="section-title">Products</h1>
+          <p class="section-subtitle" id="product-count-label">Loading products...</p>
+        </div>
+        <button class="btn btn-primary" id="add-product-btn">
+          <i class="fa-solid fa-plus"></i> Add Product
+        </button>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="card" style="padding:var(--space-4);">
+            <div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Total Products</div>
+            <div style="font-size:var(--text-2xl);font-weight:700;" id="stat-total">0</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card" style="padding:var(--space-4);">
+            <div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">In Stock</div>
+            <div style="font-size:var(--text-2xl);font-weight:700;color:var(--color-success);" id="stat-instock">0</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card" style="padding:var(--space-4);">
+            <div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Low Stock</div>
+            <div style="font-size:var(--text-2xl);font-weight:700;color:var(--color-warning);" id="stat-low">0</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card" style="padding:var(--space-4);">
+            <div style="font-size:var(--text-xs);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Out of Stock</div>
+            <div style="font-size:var(--text-2xl);font-weight:700;color:var(--color-danger);" id="stat-out">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter & Search Toolbar -->
+      <div class="card mb-4">
+        <div class="card-body" style="padding:var(--space-4);">
+          <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
+            <!-- Search -->
+            <div class="input-group" style="flex:1;min-width:200px;max-width:320px;">
+              <span class="input-group-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+              <input type="text" id="search-input" class="form-control" placeholder="Search products, SKU...">
+            </div>
+            <!-- Category filter -->
+            <select id="category-filter" class="form-control form-select" style="width:auto;min-width:150px;">
+              <option value="">All Categories</option>
+            </select>
+            <!-- Status filter -->
+            <select id="status-filter" class="form-control form-select" style="width:auto;">
+              <option value="">All Status</option>
+              <option value="instock">In Stock</option>
+              <option value="low">Low Stock</option>
+              <option value="out">Out of Stock</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <!-- Sort -->
+            <select id="sort-select" class="form-control form-select" style="width:auto;">
+              <option value="name-asc">Name A–Z</option>
+              <option value="name-desc">Name Z–A</option>
+              <option value="price-desc">Price High–Low</option>
+              <option value="price-asc">Price Low–High</option>
+              <option value="stock-asc">Stock Low–High</option>
+              <option value="stock-desc">Stock High–Low</option>
+              <option value="newest">Newest First</option>
+            </select>
+            <!-- View toggle (desktop only) -->
+            <div class="view-toggle d-none d-md-flex ms-auto">
+              <button class="view-toggle-btn active" id="table-view-btn" title="Table view">
+                <i class="fa-solid fa-list"></i>
+              </button>
+              <button class="view-toggle-btn" id="card-view-btn" title="Card view">
+                <i class="fa-solid fa-grid-2"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table View (default on desktop) -->
+      <div id="table-view">
+        <div class="tf-table-wrapper">
+          <table class="tf-table" id="products-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>SKU</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Status</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="products-tbody">
+              <!-- Injected by JS -->
+            </tbody>
+          </table>
+        </div>
+        <!-- Pagination -->
+        <div id="pagination-bar" style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-4) var(--space-2);font-size:var(--text-sm);color:var(--text-muted);flex-wrap:wrap;gap:var(--space-3);"></div>
+      </div>
+
+      <!-- Card View (mobile default, optional on desktop) -->
+      <div id="card-view" style="display:none;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--space-4);">
+        <!-- Injected by JS -->
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     ADD / EDIT PRODUCT MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="product-modal" tabindex="-1" aria-labelledby="product-modal-title" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div style="width:36px;height:36px;border-radius:var(--radius-md);background:var(--color-primary-light);color:var(--color-primary);display:flex;align-items:center;justify-content:center;">
+            <i class="fa-solid fa-tag"></i>
+          </div>
+          <h5 class="modal-title" id="product-modal-title">Add Product</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="product-form" novalidate>
+          <input type="hidden" id="product-id">
+
+          <!-- Section: Basic Info -->
+          <div style="margin-bottom:var(--space-5);">
+            <div style="font-size:var(--text-xs);font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:var(--space-4);padding-bottom:var(--space-2);border-bottom:1px solid var(--border-color);">
+              Basic Information
+            </div>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label" for="f-name">Product Name <span style="color:var(--color-danger)">*</span></label>
+                <input type="text" id="f-name" class="form-control" placeholder="e.g. Indomie Noodles (Chicken)">
+                <div class="form-error d-none" id="err-name"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="f-sku">SKU / Barcode <span style="color:var(--color-danger)">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-icon"><i class="fa-solid fa-barcode"></i></span>
+                  <input type="text" id="f-sku" class="form-control" placeholder="e.g. IND-CHK-001">
+                </div>
+                <div class="form-error d-none" id="err-sku"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="f-category">Category</label>
+                <select id="f-category" class="form-control form-select"></select>
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="f-description">Description <span class="form-label-muted">(optional)</span></label>
+                <textarea id="f-description" class="form-control" rows="2" placeholder="Brief product description..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section: Pricing -->
+          <div style="margin-bottom:var(--space-5);">
+            <div style="font-size:var(--text-xs);font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:var(--space-4);padding-bottom:var(--space-2);border-bottom:1px solid var(--border-color);">
+              Pricing
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label" for="f-price">Selling Price (₦) <span style="color:var(--color-danger)">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-icon"><i class="fa-solid fa-naira-sign"></i></span>
+                  <input type="number" id="f-price" class="form-control" placeholder="0.00" min="0" step="0.01">
+                </div>
+                <div class="form-error d-none" id="err-price"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="f-cost">Cost Price (₦) <span class="form-label-muted">(optional)</span></label>
+                <div class="input-group">
+                  <span class="input-group-icon"><i class="fa-solid fa-naira-sign"></i></span>
+                  <input type="number" id="f-cost" class="form-control" placeholder="0.00" min="0" step="0.01">
+                </div>
+                <div class="form-hint" id="margin-display" style="color:var(--color-success);">Margin: —</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section: Inventory -->
+          <div style="margin-bottom:var(--space-5);">
+            <div style="font-size:var(--text-xs);font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:var(--space-4);padding-bottom:var(--space-2);border-bottom:1px solid var(--border-color);">
+              Inventory
+            </div>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label" for="f-stock">Opening Stock <span style="color:var(--color-danger)">*</span></label>
+                <input type="number" id="f-stock" class="form-control" placeholder="0" min="0">
+                <div class="form-error d-none" id="err-stock"></div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="f-reorder">Reorder Level</label>
+                <input type="number" id="f-reorder" class="form-control" placeholder="10" min="0">
+                <div class="form-hint">Alert when stock falls below this.</div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="f-unit">Unit</label>
+                <select id="f-unit" class="form-control form-select">
+                  <option>Pack</option>
+                  <option>Tin</option>
+                  <option>Bottle</option>
+                  <option>Bag</option>
+                  <option>Box</option>
+                  <option>Carton</option>
+                  <option>Piece</option>
+                  <option>Dozen</option>
+                  <option>Litre</option>
+                  <option>Kg</option>
+                  <option>Sachet</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section: Supplier -->
+          <div>
+            <div style="font-size:var(--text-xs);font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:var(--space-4);padding-bottom:var(--space-2);border-bottom:1px solid var(--border-color);">
+              Supplier (Optional)
+            </div>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label" for="f-supplier">Supplier Name</label>
+                <input type="text" id="f-supplier" class="form-control" placeholder="e.g. Dufil Prima Foods">
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="save-product-btn">
+          <i class="fa-solid fa-floppy-disk"></i> Save Product
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     DEACTIVATE CONFIRM MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="deactivate-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Deactivate Product</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align:center;padding:var(--space-4) 0;">
+          <div style="width:56px;height:56px;border-radius:var(--radius-xl);background:var(--color-danger-light);color:var(--color-danger);display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto var(--space-4);">
+            <i class="fa-solid fa-ban"></i>
+          </div>
+          <p style="font-weight:600;color:var(--text-primary);margin-bottom:var(--space-2);">Deactivate <span id="deactivate-product-name">"Product"</span>?</p>
+          <p style="font-size:var(--text-sm);color:var(--text-muted);">
+            This product will be hidden from the POS and inventory views.
+            All existing sales history will be preserved.
+            You can reactivate it at any time.
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirm-deactivate-btn">
+          <i class="fa-solid fa-ban"></i> Deactivate
+        </button>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     VIEW PRODUCT DETAILS MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="view-product-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:480px;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Product Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="view-product-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="view-edit-btn">
+          <i class="fa-solid fa-pen"></i> Edit Product
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="tf-toast-container" class="toast-container"></div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/app.js"></script>
+
+<script>
+/**
+ * Products Module
+ * Full CRUD: list, search, filter, sort, add, edit, deactivate/reactivate.
+ */
+const Products = (() => {
+
+  // ── State ────────────────────────────────────────────────────────────────
+  let allProducts     = [];   // full product list from storage
+  let filtered        = [];   // after search/filter/sort
+  let currentPage     = 1;
+  const PAGE_SIZE     = 10;
+  let viewMode        = 'table'; // 'table' | 'card'
+  let editingId       = null;    // product ID being edited (null = new)
+  let deactivatingId  = null;    // product ID pending deactivate confirm
+  let viewingId       = null;    // product ID in view modal
+
+  // Bootstrap modal instances
+  let productModal, deactivateModal, viewProductModal;
+
+  // ── Init ─────────────────────────────────────────────────────────────────
+  function init() {
+    productModal    = new bootstrap.Modal(document.getElementById('product-modal'));
+    deactivateModal = new bootstrap.Modal(document.getElementById('deactivate-modal'));
+    viewProductModal = new bootstrap.Modal(document.getElementById('view-product-modal'));
+
+    populateCategoryDropdowns();
+    bindEvents();
+    loadAndRender();
+  }
+
+  // ── Data Loading ─────────────────────────────────────────────────────────
+  function loadAndRender() {
+    allProducts = Storage.getProducts();
+    applyFiltersAndRender();
+    updateStats();
+  }
+
+  // ── Stats Bar ────────────────────────────────────────────────────────────
+  function updateStats() {
+    const active   = allProducts.filter((p) => p.active);
+    const settings = Storage.getSettings();
+    const thresh   = settings.lowStockThreshold || 10;
+
+    const inStock  = active.filter((p) => p.stock > (p.reorderLevel || thresh));
+    const low      = active.filter((p) => p.stock > 0 && p.stock <= (p.reorderLevel || thresh));
+    const out      = active.filter((p) => p.stock === 0);
+
+    _set('stat-total',   allProducts.length);
+    _set('stat-instock', inStock.length);
+    _set('stat-low',     low.length);
+    _set('stat-out',     out.length);
+  }
+
+  // ── Filter, Sort, Search ─────────────────────────────────────────────────
+  function applyFiltersAndRender() {
+    const q        = document.getElementById('search-input')?.value.trim().toLowerCase() || '';
+    const catId    = document.getElementById('category-filter')?.value || '';
+    const status   = document.getElementById('status-filter')?.value || '';
+    const sort     = document.getElementById('sort-select')?.value || 'name-asc';
+    const settings = Storage.getSettings();
+    const thresh   = settings.lowStockThreshold || 10;
+
+    filtered = allProducts.filter((p) => {
+      // Search
+      if (q && !p.name.toLowerCase().includes(q) &&
+                !p.sku.toLowerCase().includes(q) &&
+                !(p.supplier || '').toLowerCase().includes(q)) return false;
+      // Category
+      if (catId && p.category !== catId) return false;
+      // Status
+      if (status) {
+        if (status === 'inactive' && p.active)  return false;
+        if (status !== 'inactive' && !p.active) return false;
+        if (status === 'instock' && p.stock <= (p.reorderLevel || thresh)) return false;
+        if (status === 'low'  && !(p.stock > 0 && p.stock <= (p.reorderLevel || thresh))) return false;
+        if (status === 'out'  && p.stock !== 0) return false;
+      }
+      return true;
+    });
+
+    // Sort
+    filtered.sort((a, b) => {
+      switch (sort) {
+        case 'name-asc':   return a.name.localeCompare(b.name);
+        case 'name-desc':  return b.name.localeCompare(a.name);
+        case 'price-desc': return b.price - a.price;
+        case 'price-asc':  return a.price - b.price;
+        case 'stock-asc':  return a.stock - b.stock;
+        case 'stock-desc': return b.stock - a.stock;
+        case 'newest':     return new Date(b.createdAt) - new Date(a.createdAt);
+        default:           return 0;
+      }
+    });
+
+    currentPage = 1;
+    renderView();
+    updateCountLabel();
+  }
+
+  function updateCountLabel() {
+    _set('product-count-label', `${filtered.length} of ${allProducts.length} product${allProducts.length !== 1 ? 's' : ''}`);
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  function renderView() {
+    if (viewMode === 'table') {
+      renderTable();
+    } else {
+      renderCards();
+    }
+  }
+// ── Table View ────────────────────────────────────────────────────────────
+  function renderTable() {
+    const tbody    = document.getElementById('products-tbody');
+    if (!tbody) return;
+
+    const start    = (currentPage - 1) * PAGE_SIZE;
+    const page     = filtered.slice(start, start + PAGE_SIZE);
+    const settings = Storage.getSettings();
+    const thresh   = settings.lowStockThreshold || 10;
+
+    if (page.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <div class="empty-state-icon"><i class="fa-solid fa-box-open"></i></div>
+              <p class="empty-state-title">No products found</p>
+              <p class="empty-state-desc">Try adjusting your search or filters.</p>
+            </div>
+          </td>
+        </tr>`;
+      renderPagination(0);
+      return;
+    }
+
+    tbody.innerHTML = page.map((p) => {
+      const status    = Utils.getStockStatus(p);
+      const maxStock  = Math.max(...allProducts.map((x) => x.stock), 1);
+      const barPct    = Math.min(100, Math.round((p.stock / maxStock) * 100));
+      const barColor  = p.stock === 0 ? 'var(--color-danger)'
+        : p.stock <= (p.reorderLevel || thresh) ? 'var(--color-warning)'
+        : 'var(--color-success)';
+
+      const catName = p.categoryName || '—';
+
+      return `
+        <tr style="${!p.active ? 'opacity:0.5;' : ''}">
+          <td>
+            <div style="display:flex;align-items:center;gap:var(--space-3);">
+              <div class="product-avatar" style="background:${_categoryColor(p.category)}20;color:${_categoryColor(p.category)};">
+                <i class="fa-solid fa-box"></i>
+              </div>
+              <div>
+                <div style="font-weight:600;color:var(--text-primary);font-size:var(--text-sm);">${Utils.escapeHtml(Utils.truncate(p.name, 30))}</div>
+                <div style="font-size:var(--text-xs);color:var(--text-muted);">${Utils.escapeHtml(p.supplier || '')}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <code style="font-size:0.7rem;background:var(--bg-surface-2);padding:2px 6px;border-radius:4px;color:var(--text-secondary);">
+              ${Utils.escapeHtml(p.sku)}
+            </code>
+          </td>
+          <td><span style="font-size:var(--text-xs);color:var(--text-secondary);">${Utils.escapeHtml(catName)}</span></td>
+          <td>
+            <div style="font-weight:600;color:var(--text-primary);">${Utils.formatCurrency(p.price)}</div>
+            ${p.costPrice ? `<div style="font-size:var(--text-xs);color:var(--text-muted);">Cost: ${Utils.formatCurrency(p.costPrice)}</div>` : ''}
+          </td>
+          <td>
+            <div class="stock-bar-wrapper">
+              <div>
+                <div style="font-weight:600;color:var(--text-primary);font-size:var(--text-sm);">${Utils.formatNumber(p.stock)}</div>
+                <div style="font-size:0.65rem;color:var(--text-muted);">${p.unit || 'units'}</div>
+              </div>
+              <div class="stock-bar">
+                <div class="stock-bar-fill" style="width:${barPct}%;background:${barColor};"></div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge ${status.badgeClass}">${status.label}</span></td>
+          <td>
+            <div style="display:flex;gap:var(--space-1);justify-content:flex-end;">
+              <button class="btn btn-ghost btn-icon-sm" title="View details" onclick="Products.openView('${p.id}')">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+              <button class="btn btn-ghost btn-icon-sm" title="Edit product" onclick="Products.openEdit('${p.id}')">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button class="btn btn-ghost btn-icon-sm" title="${p.active ? 'Deactivate' : 'Reactivate'}"
+                onclick="${p.active ? `Products.confirmDeactivate('${p.id}')` : `Products.reactivate('${p.id}')`}"
+                style="color:${p.active ? 'var(--color-danger)' : 'var(--color-success)'};">
+                <i class="fa-solid ${p.active ? 'fa-ban' : 'fa-check'}"></i>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+
+    renderPagination(filtered.length);
+  }
+
+  // ── Card View ─────────────────────────────────────────────────────────────
+  function renderCards() {
+    const container = document.getElementById('card-view');
+    if (!container) return;
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const page  = filtered.slice(start, start + PAGE_SIZE);
+
+    if (page.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1;">
+          <div class="empty-state-icon"><i class="fa-solid fa-box-open"></i></div>
+          <p class="empty-state-title">No products found</p>
+          <p class="empty-state-desc">Try adjusting your search or filters.</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = page.map((p) => {
+      const status = Utils.getStockStatus(p);
+      const color  = _categoryColor(p.category);
+      return `
+        <div class="product-card ${!p.active ? 'inactive' : ''}">
+          <div class="product-card-header">
+            <div style="display:flex;align-items:center;gap:var(--space-3);">
+              <div class="product-avatar" style="background:${color}20;color:${color};">
+                <i class="fa-solid fa-box"></i>
+              </div>
+              <div>
+                <div class="product-card-name">${Utils.escapeHtml(Utils.truncate(p.name, 26))}</div>
+                <div class="product-card-sku">${Utils.escapeHtml(p.sku)}</div>
+              </div>
+            </div>
+            <span class="badge ${status.badgeClass}">${status.label}</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="product-card-price">${Utils.formatCurrency(p.price)}</div>
+            <div style="text-align:right;">
+              <div style="font-size:var(--text-sm);font-weight:600;">${Utils.formatNumber(p.stock)} <span style="font-size:var(--text-xs);color:var(--text-muted);">${p.unit || 'units'}</span></div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);">In stock</div>
+            </div>
+          </div>
+          <div class="product-card-footer">
+            <span style="font-size:var(--text-xs);color:var(--text-muted);">${Utils.escapeHtml(p.categoryName || '—')}</span>
+            <div class="product-card-actions">
+              <button class="btn btn-ghost btn-icon-sm" title="View" onclick="Products.openView('${p.id}')">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+              <button class="btn btn-ghost btn-icon-sm" title="Edit" onclick="Products.openEdit('${p.id}')">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button class="btn btn-ghost btn-icon-sm" title="${p.active ? 'Deactivate' : 'Reactivate'}"
+                onclick="${p.active ? `Products.confirmDeactivate('${p.id}')` : `Products.reactivate('${p.id}')`}"
+                style="color:${p.active ? 'var(--color-danger)' : 'var(--color-success)'};">
+                <i class="fa-solid ${p.active ? 'fa-ban' : 'fa-check'}"></i>
+              </button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+  function renderPagination(total) {
+    const bar        = document.getElementById('pagination-bar');
+    if (!bar) return;
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+    if (totalPages <= 1) { bar.innerHTML = ''; return; }
+
+    const start = (currentPage - 1) * PAGE_SIZE + 1;
+    const end   = Math.min(currentPage * PAGE_SIZE, total);
+
+    bar.innerHTML = `
+      <span>Showing ${start}–${end} of ${total}</span>
+      <div style="display:flex;gap:var(--space-2);">
+        <button class="btn btn-outline btn-sm" ${currentPage === 1 ? 'disabled' : ''} onclick="Products.goPage(${currentPage - 1})">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        ${Array.from({ length: totalPages }, (_, i) => `
+          <button class="btn btn-sm ${i + 1 === currentPage ? 'btn-primary' : 'btn-outline'}"
+            onclick="Products.goPage(${i + 1})">${i + 1}</button>
+        `).join('')}
+        <button class="btn btn-outline btn-sm" ${currentPage === totalPages ? 'disabled' : ''} onclick="Products.goPage(${currentPage + 1})">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>`;
+  }
+
+  function goPage(page) {
+    currentPage = page;
+    renderView();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ── Open Add Modal ────────────────────────────────────────────────────────
+  function openAdd() {
+    editingId = null;
+    document.getElementById('product-modal-title').textContent = 'Add Product';
+    document.getElementById('product-form').reset();
+    document.getElementById('product-id').value = '';
+    clearFormErrors();
+    _set('margin-display', 'Margin: —');
+    productModal.show();
+  }
+
+  // ── Open Edit Modal ───────────────────────────────────────────────────────
+  function openEdit(id) {
+    const p = Storage.getProductById(id);
+    if (!p) return;
+
+    editingId = id;
+    document.getElementById('product-modal-title').textContent = 'Edit Product';
+    document.getElementById('product-id').value     = p.id;
+    document.getElementById('f-name').value          = p.name;
+    document.getElementById('f-sku').value           = p.sku;
+    document.getElementById('f-category').value      = p.category || '';
+    document.getElementById('f-description').value   = p.description || '';
+    document.getElementById('f-price').value         = p.price;
+    document.getElementById('f-cost').value          = p.costPrice || '';
+    document.getElementById('f-stock').value         = p.stock;
+    document.getElementById('f-reorder').value       = p.reorderLevel || '';
+    document.getElementById('f-unit').value          = p.unit || 'Pack';
+    document.getElementById('f-supplier').value      = p.supplier || '';
+
+    updateMarginDisplay();
+    clearFormErrors();
+
+    // Close view modal if open
+    viewProductModal.hide();
+    setTimeout(() => productModal.show(), 200);
+  }
+  // ── Open View Modal ───────────────────────────────────────────────────────
+  function openView(id) {
+    const p = Storage.getProductById(id);
+    if (!p) return;
+    viewingId = id;
+
+    const status  = Utils.getStockStatus(p);
+    const margin  = p.costPrice && p.price > 0
+      ? (((p.price - p.costPrice) / p.price) * 100).toFixed(1)
+      : null;
+
+    document.getElementById('view-product-body').innerHTML = `
+      <div style="display:flex;align-items:center;gap:var(--space-4);margin-bottom:var(--space-5);">
+        <div class="product-avatar" style="width:56px;height:56px;font-size:1.5rem;background:${_categoryColor(p.category)}20;color:${_categoryColor(p.category)};">
+          <i class="fa-solid fa-box"></i>
+        </div>
+        <div>
+          <h4 style="margin:0;font-size:var(--text-lg);">${Utils.escapeHtml(p.name)}</h4>
+          <code style="font-size:0.75rem;color:var(--text-muted);">${Utils.escapeHtml(p.sku)}</code>
+          &nbsp;<span class="badge ${status.badgeClass}">${status.label}</span>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-bottom:var(--space-4);">
+        ${_detailRow('Selling Price', Utils.formatCurrency(p.price))}
+        ${_detailRow('Cost Price',   p.costPrice ? Utils.formatCurrency(p.costPrice) : '—')}
+        ${_detailRow('Margin',       margin ? `${margin}%` : '—')}
+        ${_detailRow('Category',     p.categoryName || '—')}
+        ${_detailRow('Current Stock', `${Utils.formatNumber(p.stock)} ${p.unit || 'units'}`)}
+        ${_detailRow('Reorder Level', p.reorderLevel ? `${p.reorderLevel} ${p.unit || 'units'}` : '—')}
+        ${_detailRow('Supplier',     p.supplier || '—')}
+        ${_detailRow('Status',       p.active ? 'Active' : 'Inactive')}
+        ${_detailRow('Added',        Utils.formatDate(p.createdAt))}
+        ${_detailRow('Last Updated', Utils.formatDate(p.updatedAt))}
+      </div>
+
+      ${p.description ? `
+        <div style="background:var(--bg-surface-2);border-radius:var(--radius-md);padding:var(--space-3);">
+          <div style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:4px;">Description</div>
+          <div style="font-size:var(--text-sm);color:var(--text-secondary);">${Utils.escapeHtml(p.description)}</div>
+        </div>` : ''}
+    `;
+
+    // Hook edit button in view modal
+    document.getElementById('view-edit-btn').onclick = () => openEdit(id);
+    viewProductModal.show();
+  }
+
+  function _detailRow(label, value) {
+    return `
+      <div style="background:var(--bg-surface-2);border-radius:var(--radius-md);padding:var(--space-3);">
+        <div style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:2px;">${label}</div>
+        <div style="font-size:var(--text-sm);font-weight:600;color:var(--text-primary);">${value}</div>
+      </div>`;
+  }
+
+  // ── Save Product (Add or Edit) ────────────────────────────────────────────
+  function saveProduct() {
+    clearFormErrors();
+    let hasError = false;
+
+    const name     = document.getElementById('f-name').value.trim();
+    const sku      = document.getElementById('f-sku').value.trim();
+    const catId    = document.getElementById('f-category').value;
+    const desc     = document.getElementById('f-description').value.trim();
+    const price    = parseFloat(document.getElementById('f-price').value);
+    const cost     = parseFloat(document.getElementById('f-cost').value) || 0;
+    const stock    = parseInt(document.getElementById('f-stock').value, 10);
+    const reorder  = parseInt(document.getElementById('f-reorder').value, 10) || 10;
+    const unit     = document.getElementById('f-unit').value;
+    const supplier = document.getElementById('f-supplier').value.trim();
+
+    if (!name)          { _fieldErr('err-name',  'f-name',  'Product name is required.');     hasError = true; }
+    if (!sku)           { _fieldErr('err-sku',   'f-sku',   'SKU is required.');               hasError = true; }
+    if (isNaN(price) || price < 0) { _fieldErr('err-price', 'f-price', 'Enter a valid selling price.'); hasError = true; }
+    if (isNaN(stock) || stock < 0) { _fieldErr('err-stock', 'f-stock', 'Enter a valid stock quantity.'); hasError = true; }
+    if (hasError) return;
+
+    // Category name lookup
+    const cat     = Storage.getCategories().find((c) => c.id === catId);
+    const catName = cat?.name || '';
+
+    const productData = {
+      name, sku, category: catId, categoryName: catName,
+      description: desc, price, costPrice: cost,
+      stock, reorderLevel: reorder, unit, supplier, active: true,
+    };
+
+    if (editingId) {
+      // Editing existing product
+      const old = Storage.getProductById(editingId);
+      Storage.updateProduct(editingId, productData);
+
+      // If stock changed, record movement
+      if (old && old.stock !== stock) {
+        const diff = stock - old.stock;
+        Storage.addStockMovement({
+          productId:   editingId,
+          productName: name,
+          type:        diff > 0 ? 'adjustment_in' : 'adjustment_out',
+          quantity:    diff,
+          note:        'Manual stock edit via Products page',
+          balanceAfter: stock,
+        });
+      }
+
+      Utils.toastSuccess('Product Updated', `${name} has been updated.`);
+    } else {
+      // Adding new product
+      const newProd = Storage.addProduct(productData);
+      // Record opening stock movement
+      if (stock > 0) {
+        Storage.addStockMovement({
+          productId:   newProd.id,
+          productName: name,
+          type:        'opening',
+          quantity:    stock,
+          note:        'Opening stock',
+          balanceAfter: stock,
+        });
+      }
+      Utils.toastSuccess('Product Added', `${name} has been added to your catalogue.`);
+    }
+
+    // Check low stock alerts
+    Utils.checkLowStockAlerts();
+    productModal.hide();
+    loadAndRender();
+  }
+
+  // ── Deactivate / Reactivate ───────────────────────────────────────────────
+  function confirmDeactivate(id) {
+    const p = Storage.getProductById(id);
+    if (!p) return;
+    deactivatingId = id;
+    _set('deactivate-product-name', `"${p.name}"`);
+    deactivateModal.show();
+  }
+
+  function executeDeactivate() {
+    if (!deactivatingId) return;
+    const p = Storage.getProductById(deactivatingId);
+    Storage.deactivateProduct(deactivatingId);
+    Utils.toastWarning('Product Deactivated', `${p?.name} has been deactivated.`);
+    deactivateModal.hide();
+    deactivatingId = null;
+    loadAndRender();
+  }
+
+  function reactivate(id) {
+    const p = Storage.getProductById(id);
+    if (!p) return;
+    Storage.updateProduct(id, { active: true });
+    Utils.toastSuccess('Product Reactivated', `${p.name} is now active again.`);
+    loadAndRender();
+  }
+
+  // ── Margin Calculator ─────────────────────────────────────────────────────
+  function updateMarginDisplay() {
+    const price   = parseFloat(document.getElementById('f-price')?.value) || 0;
+    const cost    = parseFloat(document.getElementById('f-cost')?.value)  || 0;
+    const display = document.getElementById('margin-display');
+    if (!display) return;
+
+    if (price > 0 && cost > 0) {
+      const margin = ((price - cost) / price * 100).toFixed(1);
+      const profit = price - cost;
+      display.textContent = `Margin: ${margin}% (${Utils.formatCurrency(profit)} profit per unit)`;
+      display.style.color = margin > 0 ? 'var(--color-success)' : 'var(--color-danger)';
+    } else {
+      display.textContent = 'Margin: —';
+      display.style.color = 'var(--text-muted)';
+    }
+  }
+
+  // ── Category Dropdowns ────────────────────────────────────────────────────
+  function populateCategoryDropdowns() {
+    const cats        = Storage.getCategories();
+    const filterSel   = document.getElementById('category-filter');
+    const formSel     = document.getElementById('f-category');
+
+    const opts = cats.map((c) => `<option value="${c.id}">${Utils.escapeHtml(c.name)}</option>`).join('');
+
+    if (filterSel) filterSel.innerHTML = `<option value="">All Categories</option>${opts}`;
+    if (formSel)   formSel.innerHTML   = `<option value="">— Select Category —</option>${opts}`;
+  }
+
+  // ── Event Binding ─────────────────────────────────────────────────────────
+  function bindEvents() {
+    // Add button
+    document.getElementById('add-product-btn')?.addEventListener('click', openAdd);
+
+    // Save button in modal
+    document.getElementById('save-product-btn')?.addEventListener('click', saveProduct);
+
+    // Confirm deactivate
+    document.getElementById('confirm-deactivate-btn')?.addEventListener('click', executeDeactivate);
+
+    // Search (debounced)
+    document.getElementById('search-input')?.addEventListener(
+      'input', Utils.debounce(applyFiltersAndRender, 300)
+    );
+
+    // Filters & sort
+    ['category-filter', 'status-filter', 'sort-select'].forEach((id) => {
+      document.getElementById(id)?.addEventListener('change', applyFiltersAndRender);
+    });
+
+    // Margin calculation
+    document.getElementById('f-price')?.addEventListener('input', updateMarginDisplay);
+    document.getElementById('f-cost')?.addEventListener('input', updateMarginDisplay);
+
+    // View toggle buttons
+    document.getElementById('table-view-btn')?.addEventListener('click', () => {
+      viewMode = 'table';
+      document.getElementById('table-view').style.display = 'block';
+      document.getElementById('card-view').style.display  = 'none';
+      document.getElementById('table-view-btn').classList.add('active');
+      document.getElementById('card-view-btn').classList.remove('active');
+    });
+
+    document.getElementById('card-view-btn')?.addEventListener('click', () => {
+      viewMode = 'card';
+      document.getElementById('table-view').style.display = 'none';
+      document.getElementById('card-view').style.display  = 'grid';
+      document.getElementById('card-view-btn').classList.add('active');
+      document.getElementById('table-view-btn').classList.remove('active');
+      renderCards();
+    });
+  }
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  // Colour per category (deterministic based on id)
+  const CAT_COLORS = ['#2563EB','#10b981','#f59e0b','#6366f1','#ec4899','#06b6d4','#8b5cf6'];
+  function _categoryColor(catId) {
+    if (!catId) return '#94a3b8';
+    let hash = 0;
+    for (let i = 0; i < catId.length; i++) hash = catId.charCodeAt(i) + ((hash << 5) - hash);
+    return CAT_COLORS[Math.abs(hash) % CAT_COLORS.length];
+  }
+
+  function _set(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  function _fieldErr(errId, fieldId, msg) {
+    const errEl   = document.getElementById(errId);
+    const fieldEl = document.getElementById(fieldId);
+    if (errEl)   { errEl.textContent = msg; errEl.classList.remove('d-none'); }
+    if (fieldEl) { fieldEl.classList.add('is-invalid'); }
+  }
+
+  function clearFormErrors() {
+    document.querySelectorAll('#product-form .form-error').forEach((el) => {
+      el.classList.add('d-none'); el.textContent = '';
+    });
+    document.querySelectorAll('#product-form .form-control').forEach((el) => {
+      el.classList.remove('is-invalid');
+    });
+  }
+
+  // Public API
+  return { init, openEdit, openView, confirmDeactivate, reactivate, goPage };
+
+})();
+
+document.addEventListener('DOMContentLoaded', () => {
+  App.init({ pageTitle: 'Products', onReady: () => Products.init() });
+});
+</script>
+</body>
+</html>
+  

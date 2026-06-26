@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en-NG" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="TradeFlow — Data-Driven Inventory and Sales Management Platform for Nigerian SMEs">
+  <meta name="theme-color" content="#2563EB">
+
+  <title>Sign In — TradeFlow</title>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+
+  <!-- Bootstrap 5 -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    crossorigin="anonymous"
+  >
+
+  <!-- Font Awesome 6 -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    crossorigin="anonymous"
+  >
+
+  <!-- Google Fonts — Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <!-- TradeFlow Theme -->
+  <link rel="stylesheet" href="assets/css/theme.css">
+
+  <style>
+    /*
+     * Login-page only styles — supplements theme.css
+     * Kept here rather than in theme.css for clarity
+     */
+
+    /* Subtle animated grid pattern on the left panel */
+    .login-panel-left .panel-grid {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* Animated floating stat cards on the left panel (decorative) */
+    .panel-stat-cards {
+      position: relative;
+      z-index: 2;
+      margin-top: var(--space-10);
+    }
+
+    .panel-stat-card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4) var(--space-5);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      margin-bottom: var(--space-3);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .panel-stat-card:nth-child(2) { animation-delay: 2s; }
+    .panel-stat-card:nth-child(3) { animation-delay: 4s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-6px); }
+    }
+
+    .panel-stat-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .panel-stat-icon.blue   { background: rgba(37,99,235,0.3);   color: #93c5fd; }
+    .panel-stat-icon.green  { background: rgba(16,185,129,0.3);  color: #6ee7b7; }
+    .panel-stat-icon.yellow { background: rgba(245,158,11,0.3);  color: #fcd34d; }
+
+    .panel-stat-value {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: white;
+      line-height: 1.2;
+    }
+
+    .panel-stat-label {
+      font-size: var(--text-xs);
+      color: rgba(255,255,255,0.5);
+    }
+
+    /* Role selector tabs */
+    .role-tabs {
+      display: flex;
+      gap: var(--space-2);
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 4px;
+      margin-bottom: var(--space-5);
+    }
+
+    .role-tab {
+      flex: 1;
+      padding: var(--space-2) var(--space-3);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: var(--text-sm);
+      font-weight: 500;
+      font-family: var(--font-sans);
+      transition: var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+    }
+
+    .role-tab:hover { color: var(--text-primary); }
+
+    .role-tab.active {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Error state on form controls */
+    .form-control.is-invalid {
+      border-color: var(--color-danger);
+    }
+    .form-control.is-invalid:focus {
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+    }
+
+    /* Login page theme toggle — top-right corner */
+    .login-theme-btn {
+      position: fixed;
+      top: var(--space-5);
+      right: var(--space-5);
+      z-index: 100;
+    }
+
+    /* Divider with text */
+    .divider-text {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+    }
+    .divider-text::before,
+    .divider-text::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-color);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Theme Toggle (fixed, top-right) ────────────────────────────────────── -->
+  <div class="login-theme-btn">
+    <button class="theme-toggle" aria-label="Toggle dark mode">
+      <i class="fa-solid fa-moon"></i>
+    </button>
+  </div>
+
+  <!-- ── Login Layout ──────────────────────────────────────────────────────── -->
+  <main class="login-page" role="main">
+
+    <!-- Left Panel — Branding & Value Proposition -->
+    <aside class="login-panel-left" aria-hidden="true">
+      <!-- Grid background -->
+      <div class="panel-grid"></div>
+
+      <!-- Brand logo -->
+      <div class="login-brand" style="position:relative;z-index:2;">
+        <div class="login-brand-logo">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <span class="login-brand-name">TradeFlow</span>
+      </div>
+
+      <!-- Main copy -->
+      <div class="login-panel-content">
+        <h1 class="login-panel-heading">
+          Run your business<br>with <span>precision.</span>
+        </h1>
+        <p class="login-panel-desc">
+          A complete inventory and sales management platform built
+          for Nigerian retail businesses. Real-time insights,
+          effortless point of sale, and smart stock alerts — all in one place.
+        </p>
+
+        <!-- Feature highlights -->
+        <div class="login-features">
+          <div class="login-feature-item">
+            <div class="login-feature-icon"><i class="fa-solid fa-bolt"></i></div>
+            Fast Point of Sale with automatic VAT & receipts
+          </div>
+          <div class="login-feature-item">
+            <div class="login-feature-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+            Real-time inventory tracking with low-stock alerts
+          </div>
+          <div class="login-feature-item">
+            <div class="login-feature-icon"><i class="fa-solid fa-chart-line"></i></div>
+            Dashboard insights and detailed sales reports
+          </div>
+          <div class="login-feature-item">
+            <div class="login-feature-icon"><i class="fa-solid fa-wifi"></i></div>
+            Works offline — Progressive Web App (PWA)
+          </div>
+        </div>
+
+        <!-- Decorative live stats (sample data) -->
+        <div class="panel-stat-cards">
+          <div class="panel-stat-card">
+            <div class="panel-stat-icon blue"><i class="fa-solid fa-naira-sign"></i></div>
+            <div>
+              <div class="panel-stat-value" id="panel-revenue">₦0</div>
+              <div class="panel-stat-label">Today's Revenue</div>
+            </div>
+          </div>
+          <div class="panel-stat-card">
+            <div class="panel-stat-icon green"><i class="fa-solid fa-receipt"></i></div>
+            <div>
+              <div class="panel-stat-value" id="panel-sales">0</div>
+              <div class="panel-stat-label">Sales Today</div>
+            </div>
+          </div>
+          <div class="panel-stat-card">
+            <div class="panel-stat-icon yellow"><i class="fa-solid fa-boxes-stacked"></i></div>
+            <div>
+              <div class="panel-stat-value" id="panel-products">0</div>
+              <div class="panel-stat-label">Products in Stock</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <p class="login-panel-footer">
+        &copy; 2024 TradeFlow — Built for Nigerian SMEs &nbsp;·&nbsp;
+        Final Year Project Demo
+      </p>
+    </aside>
+
+    <!-- Right Panel — Sign In Form -->
+    <section class="login-panel-right" aria-label="Sign in form">
+      <div class="login-form-header">
+        <h2 class="login-form-title">Welcome back</h2>
+        <p class="login-form-subtitle">Sign in to your TradeFlow account</p>
+      </div>
+
+      <!-- Role Selector -->
+      <div class="role-tabs" role="tablist" aria-label="Select account type">
+        <button
+          class="role-tab active"
+          id="tab-admin"
+          role="tab"
+          aria-selected="true"
+          data-role="admin"
+          onclick="LoginPage.switchRole('admin')"
+        >
+          <i class="fa-solid fa-shield-halved"></i> Administrator
+        </button>
+        <button
+          class="role-tab"
+          id="tab-staff"
+          role="tab"
+          aria-selected="false"
+          data-role="staff"
+          onclick="LoginPage.switchRole('staff')"
+        >
+          <i class="fa-solid fa-user"></i> Staff
+        </button>
+      </div>
+
+      <!-- Login Form -->
+      <form class="login-form" id="login-form" novalidate autocomplete="on">
+
+        <!-- Email Field -->
+        <div>
+          <label class="form-label" for="email">Email Address</label>
+          <div class="input-group">
+            <span class="input-group-icon">
+              <i class="fa-regular fa-envelope"></i>
+            </span>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              class="form-control"
+              placeholder="you@example.com"
+              autocomplete="email"
+              inputmode="email"
+              required
+              aria-describedby="email-error"
+            >
+          </div>
+          <div class="form-error d-none" id="email-error" role="alert"></div>
+        </div>
+
+        <!-- Password Field -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <label class="form-label" for="password">Password</label>
+          </div>
+          <div class="input-group" style="position:relative;">
+            <span class="input-group-icon">
+              <i class="fa-solid fa-lock"></i>
+            </span>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-control"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+              required
+              aria-describedby="password-error"
+              style="padding-right:3rem;"
+            >
+            <!-- Password visibility toggle -->
+            <button
+              type="button"
+              class="password-toggle"
+              id="pw-toggle"
+              aria-label="Show password"
+              tabindex="-1"
+            >
+              <i class="fa-regular fa-eye" id="pw-toggle-icon"></i>
+            </button>
+          </div>
+          <div class="form-error d-none" id="password-error" role="alert"></div>
+        </div>
+
+        <!-- Remember Me -->
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <label class="checkbox-label">
+            <input type="checkbox" id="remember-me" name="remember">
+            Remember me for 30 days
+          </label>
+        </div>
+
+        <!-- General Error Banner -->
+        <div
+          class="d-none"
+          id="login-error"
+          role="alert"
+          style="
+            background: var(--color-danger-light);
+            color: var(--color-danger);
+            border: 1px solid var(--color-danger);
+            border-radius: var(--radius-md);
+            padding: var(--space-3) var(--space-4);
+            font-size: var(--text-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+          "
+        >
+          <i class="fa-solid fa-circle-xmark"></i>
+          <span id="login-error-text">Invalid email or password.</span>
+        </div>
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          class="btn btn-primary btn-lg w-100"
+          id="login-btn"
+          style="margin-top:var(--space-2);"
+        >
+          <i class="fa-solid fa-arrow-right-to-bracket"></i>
+          Sign In
+        </button>
+
+      </form>
+
+      <!-- Divider -->
+      <div class="divider-text" style="margin-top:var(--space-6);">Quick Access</div>
+
+      <!-- Demo Credentials Box -->
+      <div class="demo-creds" aria-label="Demo credentials">
+        <div class="demo-creds-title">
+          <i class="fa-solid fa-circle-info" style="color:var(--color-primary);"></i>
+          Click a credential to auto-fill
+        </div>
+
+        <!-- Admin -->
+        <div
+          class="demo-cred-item"
+          role="button"
+          tabindex="0"
+          aria-label="Fill admin credentials"
+          onclick="LoginPage.fillCredentials('admin@tradeflow.ng', 'admin123', 'admin')"
+          onkeydown="if(event.key==='Enter')LoginPage.fillCredentials('admin@tradeflow.ng','admin123','admin')"
+        >
+          <div>
+            <div class="demo-cred-label">
+              <i class="fa-solid fa-shield-halved" style="color:var(--color-primary);font-size:0.7rem;"></i>
+              Administrator
+            </div>
+            <div style="color:var(--text-muted);font-size:0.65rem;">admin@tradeflow.ng</div>
+          </div>
+          <div class="demo-cred-value">admin123 →</div>
+        </div>
+
+        <!-- Staff -->
+        <div
+          class="demo-cred-item"
+          role="button"
+          tabindex="0"
+          aria-label="Fill staff credentials"
+          onclick="LoginPage.fillCredentials('staff@tradeflow.ng', 'staff123', 'staff')"
+          onkeydown="if(event.key==='Enter')LoginPage.fillCredentials('staff@tradeflow.ng','staff123','staff')"
+        >
+          <div>
+            <div class="demo-cred-label">
+              <i class="fa-solid fa-user" style="color:var(--color-success);font-size:0.7rem;"></i>
+              Sales Staff
+            </div>
+            <div style="color:var(--text-muted);font-size:0.65rem;">staff@tradeflow.ng</div>
+          </div>
+          <div class="demo-cred-value">staff123 →</div>
+        </div>
+      </div>
+
+      <!-- Footer note -->
+      <p class="login-form-footer">
+        This is a frontend prototype demo.<br>
+        All data is stored locally in your browser.
+      </p>
+    </section>
+
+  </main>
+
+  <!-- ── Toast Container (injected by utils.js) ───────────────────────────── -->
+  <div id="tf-toast-container" class="toast-container" role="region" aria-live="polite"></div>
+
+  <!-- ── Scripts ───────────────────────────────────────────────────────────── -->
+  <!-- Bootstrap JS (for any bootstrap components used) -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+    crossorigin="anonymous"
+  ></script>
+
+  <!-- TradeFlow core modules (order matters — storage first) -->
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/js/theme.js"></script>
+  <script src="assets/js/utils.js"></script>
+
+  <script>
+    /**
+     * Login Page Controller
+     * Handles all interactions on the login screen.
+     */
+    const LoginPage = (() => {
+
+      // Track which role tab is active
+      let activeRole = 'admin';
+
+      // ─── Init ─────────────────────────────────────────────────────────────
+
+      function init() {
+        // 1. Seed default data on very first visit
+        Storage.seedDefaultData();
+
+        // 2. Apply saved theme
+        Theme.init();
+        Theme.bindToggleButtons();
+
+        // 3. If already logged in, skip to dashboard
+        if (Storage.isLoggedIn()) {
+          redirectAfterLogin(Storage.getSession().role);
+          return;
+        }
+
+        // 4. Check remember-me: pre-fill email if saved
+        const savedEmail = Storage.get('remember_email');
+        if (savedEmail) {
+          document.getElementById('email').value = savedEmail;
+          document.getElementById('remember-me').checked = true;
+        }
+
+        // 5. Bind form submit
+        document.getElementById('login-form').addEventListener('submit', handleSubmit);
+
+        // 6. Password toggle
+        document.getElementById('pw-toggle').addEventListener('click', togglePassword);
+
+        // 7. Clear errors on input
+        ['email', 'password'].forEach((id) => {
+          document.getElementById(id).addEventListener('input', clearErrors);
+        });
+
+        // 8. Populate decorative panel stats (from LocalStorage if seeded)
+        updatePanelStats();
+
+        // 9. Register service worker
+        registerSW();
+      }
+
+      // ─── Role Tab Switching ───────────────────────────────────────────────
+
+      function switchRole(role) {
+        activeRole = role;
+
+        // Update tab active state
+        document.querySelectorAll('.role-tab').forEach((tab) => {
+          const isActive = tab.dataset.role === role;
+          tab.classList.toggle('active', isActive);
+          tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
+        // Clear form
+        document.getElementById('email').value    = '';
+        document.getElementById('password').value = '';
+        clearErrors();
+      }
+
+      // ─── Fill Credentials (demo shortcut) ────────────────────────────────
+
+      function fillCredentials(email, password, role) {
+        // Switch to correct role tab
+        switchRole(role);
+
+        // Fill fields with a slight animation delay
+        const emailEl    = document.getElementById('email');
+        const passwordEl = document.getElementById('password');
+
+        emailEl.value    = email;
+        passwordEl.value = password;
+
+        // Visual feedback
+        emailEl.focus();
+        emailEl.classList.add('border-primary');
+        setTimeout(() => emailEl.classList.remove('border-primary'), 800);
+
+        Utils.toastInfo('Credentials Filled', `Ready to sign in as ${role}.`);
+      }
+
+      // ─── Form Submit ──────────────────────────────────────────────────────
+
+      async function handleSubmit(e) {
+        e.preventDefault();
+        clearErrors();
+
+        const email    = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const remember = document.getElementById('remember-me').checked;
+        const btn      = document.getElementById('login-btn');
+
+        // Client-side validation
+        let hasError = false;
+
+        if (!email) {
+          showFieldError('email', 'Please enter your email address.');
+          hasError = true;
+        } else if (!Utils.isValidEmail(email)) {
+          showFieldError('email', 'Please enter a valid email address.');
+          hasError = true;
+        }
+
+        if (!password) {
+          showFieldError('password', 'Please enter your password.');
+          hasError = true;
+        }
+
+        if (hasError) return;
+
+        // Simulate async network request for realism
+        btn.classList.add('btn-loading');
+        btn.innerHTML = '<span style="opacity:0;">Signing in...</span>';
+
+        await delay(800);
+
+        btn.classList.remove('btn-loading');
+        btn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In';
+
+        // Authenticate against LocalStorage users
+        const user = Storage.getUserByEmail(email);
+
+        if (!user || user.password !== password) {
+          showLoginError('Incorrect email or password. Please try again.');
+          // Shake the form for visual feedback
+          const form = document.getElementById('login-form');
+          form.style.animation = 'shake 0.4s ease';
+          setTimeout(() => form.style.animation = '', 500);
+          return;
+        }
+
+        if (!user.active) {
+          showLoginError('This account has been deactivated. Contact your administrator.');
+          return;
+        }
+
+        // Role check: ensure the selected tab matches the user's actual role
+        // (We allow any role to sign in — the tab is just a hint for UX)
+
+        // ✅ Login successful
+        // Save session
+        const session = {
+          id:        user.id,
+          name:      user.name,
+          email:     user.email,
+          role:      user.role,
+          loginTime: new Date().toISOString(),
+        };
+        Storage.setSession(session);
+
+        // Handle remember-me
+        if (remember) {
+          Storage.set('remember_email', email);
+        } else {
+          Storage.remove('remember_email');
+        }
+
+        // Success toast
+        Utils.toastSuccess('Welcome back!', `Signed in as ${user.name}`);
+
+        // Redirect after brief delay
+        await delay(600);
+        redirectAfterLogin(user.role);
+      }
+
+      // ─── Post-Login Redirect ──────────────────────────────────────────────
+
+      function redirectAfterLogin(role) {
+        // Check if there was a redirect parameter
+        const params   = new URLSearchParams(window.location.search);
+        const redirect = params.get('redirect');
+
+        if (redirect) {
+          window.location.href = decodeURIComponent(redirect);
+          return;
+        }
+
+        // Default: everyone goes to dashboard
+        window.location.href = 'pages/dashboard.html';
+      }
+
+      // ─── Error Helpers ────────────────────────────────────────────────────
+
+      function showFieldError(fieldId, message) {
+        const field   = document.getElementById(fieldId);
+        const errorEl = document.getElementById(`${fieldId}-error`);
+        field?.classList.add('is-invalid');
+        if (errorEl) {
+          errorEl.textContent = message;
+          errorEl.classList.remove('d-none');
+        }
+      }
+
+      function showLoginError(message) {
+        const errorEl  = document.getElementById('login-error');
+        const errorTxt = document.getElementById('login-error-text');
+        if (errorTxt) errorTxt.textContent = message;
+        errorEl?.classList.remove('d-none');
+        // Show as flex (override d-none)
+        if (errorEl) errorEl.style.display = 'flex';
+      }
+
+      function clearErrors() {
+        document.querySelectorAll('.form-control').forEach((el) => {
+          el.classList.remove('is-invalid');
+        });
+        document.querySelectorAll('.form-error').forEach((el) => {
+          el.classList.add('d-none');
+          el.textContent = '';
+        });
+        const loginError = document.getElementById('login-error');
+        if (loginError) {
+          loginError.style.display = 'none';
+          loginError.classList.add('d-none');
+        }
+      }
+
+      // ─── Password Toggle ──────────────────────────────────────────────────
+
+      function togglePassword() {
+        const input    = document.getElementById('password');
+        const icon     = document.getElementById('pw-toggle-icon');
+        const isHidden = input.type === 'password';
+
+        input.type = isHidden ? 'text' : 'password';
+        icon.className = isHidden ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+        document.getElementById('pw-toggle').setAttribute(
+          'aria-label', isHidden ? 'Hide password' : 'Show password'
+        );
+      }
+
+      // ─── Panel Stats (decorative) ─────────────────────────────────────────
+
+      function updatePanelStats() {
+        // Show live data from LocalStorage in the decorative left panel
+        const today  = new Date().toISOString().split('T')[0];
+        const sales  = Storage.getSales().filter((s) => s.createdAt?.startsWith(today));
+        const revenue = sales.reduce((s, x) => s + (x.total || 0), 0);
+        const products = Storage.getProducts().filter((p) => p.active && p.stock > 0).length;
+
+        const revenueEl  = document.getElementById('panel-revenue');
+        const salesEl    = document.getElementById('panel-sales');
+        const productsEl = document.getElementById('panel-products');
+
+        if (revenueEl)  revenueEl.textContent  = Utils.formatCurrency(revenue, true);
+        if (salesEl)    salesEl.textContent     = sales.length;
+        if (productsEl) productsEl.textContent  = products;
+      }
+
+      // ─── Helpers ──────────────────────────────────────────────────────────
+
+      function delay(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function registerSW() {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker
+            .register('./sw.js')
+            .catch((err) => console.warn('[Login] SW registration failed:', err));
+        }
+      }
+
+      // Public API
+      return { init, switchRole, fillCredentials };
+
+    })();
+
+    // Add the CSS shake animation dynamically
+    const shakeStyle = document.createElement('style');
+    shakeStyle.textContent = `
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20%       { transform: translateX(-8px); }
+        40%       { transform: translateX(8px); }
+        60%       { transform: translateX(-5px); }
+        80%       { transform: translateX(5px); }
+      }
+    `;
+    document.head.appendChild(shakeStyle);
+
+    // Boot on DOM ready
+    document.addEventListener('DOMContentLoaded', LoginPage.init);
+  </script>
+
+</body>
+</html>

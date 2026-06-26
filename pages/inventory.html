@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en-NG" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory — TradeFlow</title>
+  <link rel="manifest" href="../manifest.json">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <style>
+    /* Movement type badge styles */
+    .move-type-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; border-radius: var(--radius-full);
+      font-size: 0.68rem; font-weight: 600;
+    }
+    .move-sale         { background: var(--color-primary-light); color: var(--color-primary); }
+    .move-adjust-in    { background: var(--color-success-light); color: var(--color-success); }
+    .move-adjust-out   { background: var(--color-danger-light);  color: var(--color-danger); }
+    .move-opening      { background: var(--color-info-light);    color: var(--color-info); }
+    .move-return       { background: var(--color-warning-light); color: var(--color-warning); }
+
+    /* Inventory value card accent */
+    .inv-value-card {
+      background: linear-gradient(135deg, #1e3a8a, #2563EB);
+      border: none;
+      color: white;
+    }
+    .inv-value-card .stat-card-label { color: rgba(255,255,255,0.7); }
+    .inv-value-card .stat-card-value { color: white; }
+    .inv-value-card .stat-card-icon  { background: rgba(255,255,255,0.15); color: white; }
+
+    /* Stock level visual row */
+    .stock-level-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .stock-level-row:last-child { border-bottom: none; }
+
+    /* Movement qty — red for negative, green for positive */
+    .qty-positive { color: var(--color-success); font-weight: 700; }
+    .qty-negative { color: var(--color-danger);  font-weight: 700; }
+
+    /* Tabs */
+    .page-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--border-color);
+      margin-bottom: var(--space-6);
+    }
+    .page-tab {
+      padding: var(--space-3) var(--space-5);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      font-family: var(--font-sans);
+      transition: var(--transition-fast);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .page-tab:hover { color: var(--text-primary); }
+    .page-tab.active {
+      color: var(--color-primary);
+      border-bottom-color: var(--color-primary);
+    }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside id="app-sidebar" class="sidebar"></aside>
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+  <div class="app-main" id="app-main">
+    <header class="topbar" id="app-topbar">
+      <div class="topbar-left">
+        <button class="sidebar-toggle" id="sidebar-toggle-btn"><i class="fa-solid fa-bars"></i></button>
+        <span class="topbar-title" id="topbar-title">Inventory</span>
+      </div>
+      <div class="topbar-right">
+        <button class="theme-toggle"><i class="fa-solid fa-moon"></i></button>
+        <div class="dropdown">
+          <button class="user-avatar-btn dropdown-toggle" data-bs-toggle="dropdown">
+            <div class="user-avatar" id="topbar-avatar">AU</div>
+            <span class="d-none d-md-inline" id="topbar-username">Admin</span>
+            <i class="fa-solid fa-chevron-down" style="font-size:0.65rem;color:var(--text-muted);"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><div style="padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--border-color);">
+              <div style="font-size:var(--text-sm);font-weight:600;" id="topbar-username-dd"></div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);" id="topbar-userrole"></div>
+            </div></li>
+            <li><a class="dropdown-item logout-btn" href="#"><i class="fa-solid fa-right-from-bracket me-2"></i>Sign Out</a></li>
+          </ul>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1 class="section-title">Inventory</h1>
+          <p class="section-subtitle">Track stock levels, adjust quantities, and view movement history.</p>
+        </div>
+        <button class="btn btn-primary" id="adjust-stock-btn">
+          <i class="fa-solid fa-sliders"></i> Adjust Stock
+        </button>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="row g-3 mb-4">
+        <!-- Inventory Value — featured card -->
+        <div class="col-12 col-md-4">
+          <div class="stat-card inv-value-card" style="--stat-accent:transparent;">
+            <div class="stat-card-header">
+              <span class="stat-card-label">Total Inventory Value</span>
+              <div class="stat-card-icon"><i class="fa-solid fa-warehouse"></i></div>
+            </div>
+            <div class="stat-card-value" id="inv-total-value">₦0</div>
+            <div style="font-size:var(--text-xs);color:rgba(255,255,255,0.5);" id="inv-total-units">0 total units</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="stat-card" style="--stat-accent:var(--color-success);--stat-icon-bg:var(--color-success-light);--stat-icon-color:var(--color-success);">
+            <div class="stat-card-header">
+              <span class="stat-card-label">In Stock</span>
+              <div class="stat-card-icon"><i class="fa-solid fa-check-circle"></i></div>
+            </div>
+            <div class="stat-card-value" id="inv-instock">0</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="stat-card" style="--stat-accent:var(--color-warning);--stat-icon-bg:var(--color-warning-light);--stat-icon-color:var(--color-warning);">
+            <div class="stat-card-header">
+              <span class="stat-card-label">Low Stock</span>
+              <div class="stat-card-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            </div>
+            <div class="stat-card-value" id="inv-low">0</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="stat-card" style="--stat-accent:var(--color-danger);--stat-icon-bg:var(--color-danger-light);--stat-icon-color:var(--color-danger);">
+            <div class="stat-card-header">
+              <span class="stat-card-label">Out of Stock</span>
+              <div class="stat-card-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+            </div>
+            <div class="stat-card-value" id="inv-out">0</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="stat-card" style="--stat-accent:var(--color-info);--stat-icon-bg:var(--color-info-light);--stat-icon-color:var(--color-info);">
+            <div class="stat-card-header">
+              <span class="stat-card-label">Categories</span>
+              <div class="stat-card-icon"><i class="fa-solid fa-tags"></i></div>
+            </div>
+            <div class="stat-card-value" id="inv-cats">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page Tabs -->
+      <div class="page-tabs">
+        <button class="page-tab active" data-tab="stock-overview">
+          <i class="fa-solid fa-boxes-stacked"></i> Stock Overview
+        </button>
+        <button class="page-tab" data-tab="movement-history">
+          <i class="fa-solid fa-clock-rotate-left"></i> Movement History
+        </button>
+        <button class="page-tab" data-tab="low-stock">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          Low Stock <span id="low-stock-tab-count" class="nav-badge ms-1" style="background:var(--color-warning);"></span>
+        </button>
+      </div>
+
+      <!-- ── Tab: Stock Overview ── -->
+      <div class="tab-pane active" id="tab-stock-overview">
+        <!-- Toolbar -->
+        <div class="card mb-4">
+          <div class="card-body" style="padding:var(--space-4);">
+            <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
+              <div class="input-group" style="flex:1;min-width:200px;max-width:300px;">
+                <span class="input-group-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" id="inv-search" class="form-control" placeholder="Search products...">
+              </div>
+              <select id="inv-cat-filter" class="form-control form-select" style="width:auto;min-width:150px;">
+                <option value="">All Categories</option>
+              </select>
+              <select id="inv-sort" class="form-control form-select" style="width:auto;">
+                <option value="stock-asc">Stock: Low → High</option>
+                <option value="stock-desc">Stock: High → Low</option>
+                <option value="value-desc">Value: High → Low</option>
+                <option value="name-asc">Name A–Z</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="tf-table-wrapper">
+          <table class="tf-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>SKU</th>
+                <th>Category</th>
+                <th>Stock Level</th>
+                <th>Reorder At</th>
+                <th>Unit Value</th>
+                <th>Total Value</th>
+                <th>Status</th>
+                <th style="text-align:right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="inv-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Tab: Movement History ── -->
+      <div class="tab-pane" id="tab-movement-history">
+        <div class="card mb-4">
+          <div class="card-body" style="padding:var(--space-4);">
+            <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
+              <div class="input-group" style="flex:1;min-width:200px;max-width:300px;">
+                <span class="input-group-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" id="move-search" class="form-control" placeholder="Search product name...">
+              </div>
+              <select id="move-type-filter" class="form-control form-select" style="width:auto;">
+                <option value="">All Types</option>
+                <option value="sale">Sale</option>
+                <option value="adjustment_in">Stock In</option>
+                <option value="adjustment_out">Stock Out</option>
+                <option value="opening">Opening Stock</option>
+              </select>
+              <input type="date" id="move-date-filter" class="form-control" style="width:auto;" title="Filter by date">
+            </div>
+          </div>
+        </div>
+
+        <div class="tf-table-wrapper">
+          <table class="tf-table">
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Product</th>
+                <th>Type</th>
+                <th>Quantity</th>
+                <th>Balance After</th>
+                <th>Note</th>
+                <th>Recorded By</th>
+              </tr>
+            </thead>
+            <tbody id="move-tbody"></tbody>
+          </table>
+        </div>
+        <div id="move-pagination" style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-4) var(--space-2);font-size:var(--text-sm);color:var(--text-muted);flex-wrap:wrap;gap:var(--space-3);"></div>
+      </div>
+
+      <!-- ── Tab: Low Stock ── -->
+      <div class="tab-pane" id="tab-low-stock">
+        <div id="low-stock-content"></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     STOCK ADJUSTMENT MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="adjust-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:480px;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <div style="width:36px;height:36px;border-radius:var(--radius-md);background:var(--color-primary-light);color:var(--color-primary);display:flex;align-items:center;justify-content:center;">
+            <i class="fa-solid fa-sliders"></i>
+          </div>
+          <h5 class="modal-title">Stock Adjustment</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Product selector -->
+        <div style="margin-bottom:var(--space-4);">
+          <label class="form-label" for="adj-product">Product <span style="color:var(--color-danger)">*</span></label>
+          <select id="adj-product" class="form-control form-select">
+            <option value="">— Select a product —</option>
+          </select>
+        </div>
+
+        <!-- Current stock display -->
+        <div id="adj-current-display" style="
+          display:none;
+          background:var(--bg-surface-2);
+          border:1px solid var(--border-color);
+          border-radius:var(--radius-md);
+          padding:var(--space-3) var(--space-4);
+          margin-bottom:var(--space-4);
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+        ">
+          <span style="font-size:var(--text-sm);color:var(--text-muted);">Current Stock</span>
+          <span style="font-size:var(--text-lg);font-weight:700;" id="adj-current-qty">0</span>
+        </div>
+
+        <!-- Adjustment type -->
+        <div style="margin-bottom:var(--space-4);">
+          <label class="form-label">Adjustment Type <span style="color:var(--color-danger)">*</span></label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);">
+            <label style="
+              border:2px solid var(--border-color);
+              border-radius:var(--radius-md);
+              padding:var(--space-3) var(--space-4);
+              cursor:pointer;
+              transition:var(--transition-fast);
+              display:flex;
+              align-items:center;
+              gap:var(--space-2);
+              font-size:var(--text-sm);
+              font-weight:500;
+            " id="adj-type-in-label">
+              <input type="radio" name="adj-type" value="in" id="adj-type-in" style="accent-color:var(--color-success);" checked>
+              <i class="fa-solid fa-plus" style="color:var(--color-success);"></i>
+              Stock In
+            </label>
+            <label style="
+              border:2px solid var(--border-color);
+              border-radius:var(--radius-md);
+              padding:var(--space-3) var(--space-4);
+              cursor:pointer;
+              transition:var(--transition-fast);
+              display:flex;
+              align-items:center;
+              gap:var(--space-2);
+              font-size:var(--text-sm);
+              font-weight:500;
+            " id="adj-type-out-label">
+              <input type="radio" name="adj-type" value="out" id="adj-type-out" style="accent-color:var(--color-danger);">
+              <i class="fa-solid fa-minus" style="color:var(--color-danger);"></i>
+              Stock Out
+            </label>
+          </div>
+        </div>
+
+        <!-- Quantity -->
+        <div style="margin-bottom:var(--space-4);">
+          <label class="form-label" for="adj-qty">Quantity <span style="color:var(--color-danger)">*</span></label>
+          <input type="number" id="adj-qty" class="form-control" placeholder="0" min="1">
+          <div class="form-error d-none" id="adj-qty-err"></div>
+        </div>
+
+        <!-- New balance preview -->
+        <div id="adj-preview" style="
+          background:var(--color-primary-light);
+          border-radius:var(--radius-md);
+          padding:var(--space-3) var(--space-4);
+          margin-bottom:var(--space-4);
+          display:none;
+          align-items:center;
+          justify-content:space-between;
+        ">
+          <span style="font-size:var(--text-sm);color:var(--color-primary);">New Balance</span>
+          <span style="font-size:var(--text-lg);font-weight:700;color:var(--color-primary);" id="adj-new-qty">0</span>
+        </div>
+
+        <!-- Note -->
+        <div>
+          <label class="form-label" for="adj-note">Note / Reason <span class="form-label-muted">(optional)</span></label>
+          <textarea id="adj-note" class="form-control" rows="2" placeholder="e.g. Received new shipment from supplier..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirm-adjust-btn">
+          <i class="fa-solid fa-check"></i> Apply Adjustment
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="tf-toast-container" class="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/app.js"></script>
+
+<script>
+/**
+ * Inventory Module
+ * Handles stock overview, movement history, low-stock view, and stock adjustments.
+ */
+const Inventory = (() => {
+
+  let adjustModal;
+  let movePage    = 1;
+  const MOV_SIZE  = 15;
+  let filteredMov = [];
+
+  // ── Init ─────────────────────────────────────────────────────────────────
+  function init() {
+    adjustModal = new bootstrap.Modal(document.getElementById('adjust-modal'));
+
+    populateCategoryFilter();
+    populateAdjustProductList();
+    bindEvents();
+    renderKPIs();
+    renderStockOverview();
+    renderMovementHistory();
+    renderLowStock();
+  }
+
+  // ── KPIs ─────────────────────────────────────────────────────────────────
+  function renderKPIs() {
+    const products = Storage.getProducts().filter((p) => p.active);
+    const settings = Storage.getSettings();
+    const thresh   = settings.lowStockThreshold || 10;
+    const cats     = Storage.getCategories();
+
+    const totalValue = products.reduce((s, p) => s + (p.price * p.stock), 0);
+    const totalUnits = products.reduce((s, p) => s + p.stock, 0);
+    const inStock    = products.filter((p) => p.stock > (p.reorderLevel || thresh)).length;
+    const low        = products.filter((p) => p.stock > 0 && p.stock <= (p.reorderLevel || thresh)).length;
+    const out        = products.filter((p) => p.stock === 0).length;
+
+    _set('inv-total-value', Utils.formatCurrency(totalValue, true));
+    _set('inv-total-units', `${Utils.formatNumber(totalUnits)} total units across ${products.length} products`);
+    _set('inv-instock', inStock);
+    _set('inv-low', low);
+    _set('inv-out', out);
+    _set('inv-cats', cats.length);
+    _set('low-stock-tab-count', low + out);
+  }
+
+  // ── Stock Overview ────────────────────────────────────────────────────────
+  function renderStockOverview() {
+    const q      = document.getElementById('inv-search')?.value.trim().toLowerCase() || '';
+    const catId  = document.getElementById('inv-cat-filter')?.value || '';
+    const sort   = document.getElementById('inv-sort')?.value || 'stock-asc';
+    const thresh = (Storage.getSettings().lowStockThreshold) || 10;
+
+    let products = Storage.getProducts().filter((p) => p.active);
+
+    if (q)     products = products.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
+    if (catId) products = products.filter((p) => p.category === catId);
+
+    products.sort((a, b) => {
+      switch (sort) {
+        case 'stock-asc':   return a.stock - b.stock;
+        case 'stock-desc':  return b.stock - a.stock;
+        case 'value-desc':  return (b.price * b.stock) - (a.price * a.stock);
+        case 'name-asc':    return a.name.localeCompare(b.name);
+        default: return 0;
+      }
+    });
+
+    const tbody = document.getElementById('inv-tbody');
+    if (!tbody) return;
+
+    if (products.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9">
+        <div class="empty-state"><div class="empty-state-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+          <p class="empty-state-title">No products found</p></div></td></tr>`;
+      return;
+    }
+
+    const maxStock = Math.max(...products.map((p) => p.stock), 1);
+
+    tbody.innerHTML = products.map((p) => {
+      const status    = Utils.getStockStatus(p);
+      const barPct    = Math.min(100, Math.round((p.stock / maxStock) * 100));
+      const barColor  = p.stock === 0 ? 'var(--color-danger)'
+        : p.stock <= (p.reorderLevel || thresh) ? 'var(--color-warning)'
+        : 'var(--color-success)';
+      const totalVal  = p.price * p.stock;
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:600;font-size:var(--text-sm);">${Utils.escapeHtml(Utils.truncate(p.name, 28))}</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);">${p.supplier ? Utils.escapeHtml(p.supplier) : ''}</div>
+          </td>
+          <td><code style="font-size:0.7rem;background:var(--bg-surface-2);padding:2px 6px;border-radius:4px;">${Utils.escapeHtml(p.sku)}</code></td>
+          <td><span style="font-size:var(--text-xs);">${Utils.escapeHtml(p.categoryName || '—')}</span></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:var(--space-2);">
+              <div style="font-weight:700;min-width:36px;">${Utils.formatNumber(p.stock)}</div>
+              <div style="flex:1;min-width:60px;">
+                <div style="height:6px;background:var(--border-color);border-radius:3px;overflow:hidden;">
+                  <div style="height:100%;width:${barPct}%;background:${barColor};border-radius:3px;"></div>
+                </div>
+              </div>
+            </div>
+            <div style="font-size:0.65rem;color:var(--text-muted);">${p.unit || 'units'}</div>
+          </td>
+          <td style="font-size:var(--text-sm);">${p.reorderLevel || 10} ${p.unit || ''}</td>
+          <td style="font-size:var(--text-sm);">${Utils.formatCurrency(p.price)}</td>
+          <td>
+            <div style="font-weight:600;font-size:var(--text-sm);">${Utils.formatCurrency(totalVal, true)}</div>
+          </td>
+          <td><span class="badge ${status.badgeClass}">${status.label}</span></td>
+          <td style="text-align:right;">
+            <button class="btn btn-outline btn-sm" onclick="Inventory.openAdjustFor('${p.id}')">
+              <i class="fa-solid fa-sliders"></i> Adjust
+            </button>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  // ── Movement History ──────────────────────────────────────────────────────
+  function renderMovementHistory() {
+    const q        = document.getElementById('move-search')?.value.trim().toLowerCase() || '';
+    const type     = document.getElementById('move-type-filter')?.value || '';
+    const dateVal  = document.getElementById('move-date-filter')?.value || '';
+
+    let moves = [...Storage.getStockMovements()].reverse(); // newest first
+
+    if (q)       moves = moves.filter((m) => m.productName?.toLowerCase().includes(q));
+    if (type)    moves = moves.filter((m) => m.type === type);
+    if (dateVal) moves = moves.filter((m) => m.createdAt?.startsWith(dateVal));
+
+    filteredMov = moves;
+    movePage    = 1;
+    renderMovPage();
+  }
+
+  function renderMovPage() {
+    const tbody = document.getElementById('move-tbody');
+    if (!tbody) return;
+
+    const start = (movePage - 1) * MOV_SIZE;
+    const page  = filteredMov.slice(start, start + MOV_SIZE);
+
+    if (page.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7">
+        <div class="empty-state"><div class="empty-state-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+          <p class="empty-state-title">No movements found</p>
+          <p class="empty-state-desc">Stock movements appear here when sales are made or stock is adjusted.</p>
+        </div></td></tr>`;
+      _renderMovPagination(0);
+      return;
+    }
+
+    const typeConfig = {
+      sale:           { label: 'Sale',         cls: 'move-sale',       icon: 'fa-receipt' },
+      adjustment_in:  { label: 'Stock In',     cls: 'move-adjust-in',  icon: 'fa-plus' },
+      adjustment_out: { label: 'Stock Out',    cls: 'move-adjust-out', icon: 'fa-minus' },
+      opening:        { label: 'Opening',      cls: 'move-opening',    icon: 'fa-box' },
+      return:         { label: 'Return',       cls: 'move-return',     icon: 'fa-rotate-left' },
+    };
+
+    tbody.innerHTML = page.map((m) => {
+      const cfg = typeConfig[m.type] || { label: m.type, cls: 'move-opening', icon: 'fa-circle' };
+      const qtyClass  = m.quantity >= 0 ? 'qty-positive' : 'qty-negative';
+      const qtyPrefix = m.quantity >= 0 ? '+' : '';
+
+      return `
+        <tr>
+          <td>
+            <div style="font-size:var(--text-sm);">${Utils.formatDate(m.createdAt)}</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);">${Utils.formatTime(m.createdAt)}</div>
+          </td>
+          <td>
+            <div style="font-size:var(--text-sm);font-weight:500;">${Utils.escapeHtml(Utils.truncate(m.productName || '—', 26))}</div>
+          </td>
+          <td>
+            <span class="move-type-badge ${cfg.cls}">
+              <i class="fa-solid ${cfg.icon}"></i> ${cfg.label}
+            </span>
+          </td>
+          <td class="${qtyClass}" style="font-size:var(--text-sm);">
+            ${qtyPrefix}${Utils.formatNumber(m.quantity)}
+          </td>
+          <td style="font-size:var(--text-sm);font-weight:500;">${Utils.formatNumber(m.balanceAfter ?? '—')}</td>
+          <td style="font-size:var(--text-xs);color:var(--text-muted);max-width:180px;">
+            ${Utils.escapeHtml(Utils.truncate(m.note || '—', 40))}
+          </td>
+          <td style="font-size:var(--text-xs);color:var(--text-muted);">${Utils.escapeHtml(m.createdBy || '—')}</td>
+        </tr>`;
+    }).join('');
+
+    _renderMovPagination(filteredMov.length);
+  }
+
+  function _renderMovPagination(total) {
+    const bar        = document.getElementById('move-pagination');
+    if (!bar) return;
+    const totalPages = Math.ceil(total / MOV_SIZE);
+    if (totalPages <= 1) { bar.innerHTML = ''; return; }
+
+    const start = (movePage - 1) * MOV_SIZE + 1;
+    const end   = Math.min(movePage * MOV_SIZE, total);
+
+    bar.innerHTML = `
+      <span>Showing ${start}–${end} of ${total} movements</span>
+      <div style="display:flex;gap:var(--space-2);">
+        <button class="btn btn-outline btn-sm" ${movePage === 1 ? 'disabled' : ''}
+          onclick="Inventory.movGoPage(${movePage - 1})"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="btn btn-outline btn-sm" ${movePage === totalPages ? 'disabled' : ''}
+          onclick="Inventory.movGoPage(${movePage + 1})"><i class="fa-solid fa-chevron-right"></i></button>
+      </div>`;
+  }
+
+  function movGoPage(page) {
+    movePage = page;
+    renderMovPage();
+  }
+   // ── Low Stock Tab ─────────────────────────────────────────────────────────
+  function renderLowStock() {
+    const container = document.getElementById('low-stock-content');
+    if (!container) return;
+
+    const settings = Storage.getSettings();
+    const thresh   = settings.lowStockThreshold || 10;
+    const products = Storage.getProducts().filter((p) => p.active);
+
+    const outOfStock = products.filter((p) => p.stock === 0);
+    const lowStock   = products.filter((p) => p.stock > 0 && p.stock <= (p.reorderLevel || thresh));
+
+    if (outOfStock.length === 0 && lowStock.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state" style="padding:var(--space-12);">
+          <div class="empty-state-icon" style="background:var(--color-success-light);color:var(--color-success);">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <p class="empty-state-title">All stock levels are healthy!</p>
+          <p class="empty-state-desc">No products are running low or out of stock.</p>
+        </div>`;
+      return;
+    }
+
+    const buildSection = (title, items, type) => {
+      if (items.length === 0) return '';
+      const accentColor = type === 'out' ? 'var(--color-danger)' : 'var(--color-warning)';
+      const badgeCls    = type === 'out' ? 'badge-danger' : 'badge-warning';
+      const label       = type === 'out' ? 'Out of Stock' : 'Low Stock';
+
+      return `
+        <div class="card mb-4">
+          <div class="card-header">
+            <h3 class="card-title" style="color:${accentColor};">
+              <i class="fa-solid ${type === 'out' ? 'fa-circle-xmark' : 'fa-triangle-exclamation'}"></i>
+              ${title} <span class="badge ${badgeCls} ms-2">${items.length}</span>
+            </h3>
+            <span style="font-size:var(--text-xs);color:var(--text-muted);">
+              ${type === 'out' ? 'These products need immediate restocking.' : 'Stock is below reorder level.'}
+            </span>
+          </div>
+          <div class="tf-table-wrapper" style="border:none;border-radius:0;">
+            <table class="tf-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Current Stock</th>
+                  <th>Reorder Level</th>
+                  <th>Supplier</th>
+                  <th>Status</th>
+                  <th style="text-align:right;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${items.map((p) => `
+                  <tr>
+                    <td>
+                      <div style="font-weight:600;font-size:var(--text-sm);">${Utils.escapeHtml(p.name)}</div>
+                      <code style="font-size:0.65rem;color:var(--text-muted);">${Utils.escapeHtml(p.sku)}</code>
+                    </td>
+                    <td>
+                      <span style="font-size:var(--text-sm);font-weight:700;color:${accentColor};">
+                        ${Utils.formatNumber(p.stock)} ${p.unit || 'units'}
+                      </span>
+                    </td>
+                    <td style="font-size:var(--text-sm);">${p.reorderLevel || 10} ${p.unit || ''}</td>
+                    <td style="font-size:var(--text-sm);color:var(--text-muted);">${Utils.escapeHtml(p.supplier || '—')}</td>
+                    <td><span class="badge ${badgeCls}">${label}</span></td>
+                    <td style="text-align:right;">
+                      <button class="btn btn-primary btn-sm" onclick="Inventory.openAdjustFor('${p.id}')">
+                        <i class="fa-solid fa-plus"></i> Restock
+                      </button>
+                    </td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    };
+
+    container.innerHTML =
+      buildSection('Out of Stock', outOfStock, 'out') +
+      buildSection('Low Stock',    lowStock,   'low');
+  }
+
+  // ── Stock Adjustment Modal ────────────────────────────────────────────────
+  function openAdjust() {
+    document.getElementById('adj-product').value = '';
+    document.getElementById('adj-qty').value     = '';
+    document.getElementById('adj-note').value    = '';
+    document.getElementById('adj-current-display').style.display = 'none';
+    document.getElementById('adj-preview').style.display         = 'none';
+    document.getElementById('adj-type-in').checked              = true;
+    document.getElementById('adj-qty-err').classList.add('d-none');
+    adjustModal.show();
+  }
+
+  function openAdjustFor(productId) {
+    openAdjust();
+    // Pre-select the product
+    setTimeout(() => {
+      const sel = document.getElementById('adj-product');
+      if (sel) {
+        sel.value = productId;
+        sel.dispatchEvent(new Event('change'));
+      }
+    }, 100);
+  }
+
+  function applyAdjustment() {
+    const productId = document.getElementById('adj-product').value;
+    const qty       = parseInt(document.getElementById('adj-qty').value, 10);
+    const type      = document.querySelector('input[name="adj-type"]:checked')?.value || 'in';
+    const note      = document.getElementById('adj-note').value.trim();
+
+    // Validation
+    const errEl = document.getElementById('adj-qty-err');
+    errEl.classList.add('d-none');
+
+    if (!productId) {
+      Utils.toastError('Select a product', 'Please select the product to adjust.');
+      return;
+    }
+    if (isNaN(qty) || qty <= 0) {
+      errEl.textContent = 'Enter a valid quantity greater than 0.';
+      errEl.classList.remove('d-none');
+      return;
+    }
+
+    const product     = Storage.getProductById(productId);
+    if (!product) return;
+
+    const delta       = type === 'in' ? qty : -qty;
+    const newStock    = Math.max(0, product.stock + delta);
+
+    // Update product stock
+    Storage.updateProduct(productId, { stock: newStock });
+
+    // Record movement
+    Storage.addStockMovement({
+      productId,
+      productName:  product.name,
+      type:         type === 'in' ? 'adjustment_in' : 'adjustment_out',
+      quantity:     delta,
+      note:         note || (type === 'in' ? 'Stock received' : 'Stock removed'),
+      balanceAfter: newStock,
+    });
+
+    Utils.checkLowStockAlerts();
+    Utils.toastSuccess(
+      'Stock Adjusted',
+      `${product.name}: ${type === 'in' ? '+' : ''}${delta} → ${newStock} ${product.unit || 'units'}`
+    );
+
+    adjustModal.hide();
+    renderKPIs();
+    renderStockOverview();
+    renderMovementHistory();
+    renderLowStock();
+  }
+
+  // ── Populate dropdowns ────────────────────────────────────────────────────
+  function populateCategoryFilter() {
+    const cats = Storage.getCategories();
+    const sel  = document.getElementById('inv-cat-filter');
+    if (sel) {
+      sel.innerHTML = `<option value="">All Categories</option>` +
+        cats.map((c) => `<option value="${c.id}">${Utils.escapeHtml(c.name)}</option>`).join('');
+    }
+  }
+
+  function populateAdjustProductList() {
+    const products = Storage.getProducts().filter((p) => p.active);
+    const sel      = document.getElementById('adj-product');
+    if (!sel) return;
+    sel.innerHTML = `<option value="">— Select a product —</option>` +
+      products.map((p) => `<option value="${p.id}">${Utils.escapeHtml(p.name)} (${Utils.formatNumber(p.stock)} ${p.unit || 'units'})</option>`).join('');
+  }
+
+  // ── Event Binding ─────────────────────────────────────────────────────────
+  function bindEvents() {
+    // Tab switching
+    document.querySelectorAll('.page-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.page-tab').forEach((t) => t.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach((p) => p.classList.remove('active'));
+        tab.classList.add('active');
+        const target = document.getElementById(`tab-${tab.dataset.tab}`);
+        if (target) target.classList.add('active');
+      });
+    });
+
+    // Open adjust modal
+    document.getElementById('adjust-stock-btn')?.addEventListener('click', openAdjust);
+    document.getElementById('confirm-adjust-btn')?.addEventListener('click', applyAdjustment);
+
+    // Product select in adjust modal — show current stock
+    document.getElementById('adj-product')?.addEventListener('change', (e) => {
+      const p   = Storage.getProductById(e.target.value);
+      const cur = document.getElementById('adj-current-display');
+      const pre = document.getElementById('adj-preview');
+      if (p) {
+        _set('adj-current-qty', `${Utils.formatNumber(p.stock)} ${p.unit || 'units'}`);
+        cur.style.display = 'flex';
+        updateAdjPreview();
+      } else {
+        cur.style.display = 'none';
+        pre.style.display = 'none';
+      }
+    });
+
+    // Live preview of new balance
+    const updatePreviewBound = () => updateAdjPreview();
+    document.getElementById('adj-qty')?.addEventListener('input', updatePreviewBound);
+    document.querySelectorAll('input[name="adj-type"]').forEach((r) =>
+      r.addEventListener('change', updatePreviewBound));
+
+    // Radio label highlighting
+    document.querySelectorAll('input[name="adj-type"]').forEach((radio) => {
+      radio.addEventListener('change', () => {
+        document.getElementById('adj-type-in-label').style.borderColor  =
+          document.getElementById('adj-type-in').checked ? 'var(--color-success)' : 'var(--border-color)';
+        document.getElementById('adj-type-out-label').style.borderColor =
+          document.getElementById('adj-type-out').checked ? 'var(--color-danger)' : 'var(--border-color)';
+      });
+    });
+
+    // Stock overview filters
+    document.getElementById('inv-search')?.addEventListener('input', Utils.debounce(renderStockOverview, 300));
+    document.getElementById('inv-cat-filter')?.addEventListener('change', renderStockOverview);
+    document.getElementById('inv-sort')?.addEventListener('change', renderStockOverview);
+
+    // Movement filters
+    document.getElementById('move-search')?.addEventListener('input', Utils.debounce(renderMovementHistory, 300));
+    document.getElementById('move-type-filter')?.addEventListener('change', renderMovementHistory);
+    document.getElementById('move-date-filter')?.addEventListener('change', renderMovementHistory);
+  }
+
+  function updateAdjPreview() {
+    const productId = document.getElementById('adj-product').value;
+    const qty       = parseInt(document.getElementById('adj-qty').value, 10);
+    const type      = document.querySelector('input[name="adj-type"]:checked')?.value || 'in';
+    const pre       = document.getElementById('adj-preview');
+    const newQtyEl  = document.getElementById('adj-new-qty');
+
+    if (productId && !isNaN(qty) && qty > 0) {
+      const product   = Storage.getProductById(productId);
+      if (!product) return;
+      const delta     = type === 'in' ? qty : -qty;
+      const newStock  = Math.max(0, product.stock + delta);
+      if (newQtyEl)   newQtyEl.textContent = `${Utils.formatNumber(newStock)} ${product.unit || 'units'}`;
+      if (pre)        pre.style.display = 'flex';
+    } else {
+      if (pre) pre.style.display = 'none';
+    }
+  }
+
+  function _set(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  return { init, openAdjustFor, movGoPage };
+
+})();
+
+document.addEventListener('DOMContentLoaded', () => {
+  App.init({ pageTitle: 'Inventory', onReady: () => Inventory.init() });
+});
+</script>
+</body>
+</html>
