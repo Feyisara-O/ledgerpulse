@@ -752,8 +752,7 @@ const Dashboard = (() => {
         </div>`;
     }).join('');
   }
-
-  // ─── Business Insights ───────────────────────────────────────────────────
+ // ─── Business Insights ───────────────────────────────────────────────────
   function renderInsights(sales) {
     const container = document.getElementById('insights-list');
     if (!container) return;
@@ -780,6 +779,7 @@ const Dashboard = (() => {
         text:  `Average transaction value is <strong>${Utils.formatCurrency(summary.avgTransaction)}</strong> across ${summary.transactions} sale${summary.transactions !== 1 ? 's' : ''}.`
       });
     }
+
     // 3. Low stock warning
     const lowStockProds = products.filter((p) => p.stock > 0 && p.stock <= (p.reorderLevel || threshold));
     if (lowStockProds.length > 0) {
@@ -814,6 +814,19 @@ const Dashboard = (() => {
         color: 'var(--color-success)',
         text:  `<strong>${bestDay.label}</strong> was your highest revenue day with <strong>${Utils.formatCurrency(bestDay.revenue)}</strong>.`
       });
+    }
+
+    // 7. Dead stock — active products with zero sales in this period
+    if (sales.length > 0) {
+      const products    = Storage.getProducts().filter((p) => p.active && p.stock > 0);
+      const soldIds     = new Set(sales.flatMap((s) => (s.items || []).map((i) => i.productId)));
+      const deadStock   = products.filter((p) => !soldIds.has(p.id));
+      if (deadStock.length > 0) {
+        insights.push({
+          color: 'var(--color-warning)',
+          text:  `<strong>${deadStock.length}</strong> product${deadStock.length !== 1 ? 's have' : ' has'} not sold recently: ${deadStock.slice(0, 2).map((p) => `<strong>${Utils.escapeHtml(p.name)}</strong>`).join(', ')}${deadStock.length > 2 ? ` and ${deadStock.length - 2} more` : ''}. Consider promotions to move this stock.`
+        });
+      }
     }
 
     if (insights.length === 0) {

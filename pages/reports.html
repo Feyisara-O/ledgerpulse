@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en-NG" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports — TradeFlow</title>
+  <link rel="manifest" href="../manifest.json">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <style>
+    /*
+     * Reports — page-specific styles
+     */
+
+    /* Report section headings */
+    .report-section-title {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: var(--space-4);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .report-section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-color);
+      margin-left: var(--space-2);
+    }
+
+    /* Export button — disabled with tooltip */
+    .export-btn {
+      position: relative;
+      cursor: not-allowed !important;
+      opacity: 0.6;
+    }
+    .export-btn:hover::after {
+      content: 'Available in Production Version';
+      position: absolute;
+      bottom: calc(100% + 8px);
+      right: 0;
+      background: var(--text-primary);
+      color: var(--bg-surface);
+      font-size: 0.68rem;
+      font-weight: 500;
+      white-space: nowrap;
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+      pointer-events: none;
+      z-index: 10;
+      box-shadow: var(--shadow-md);
+    }
+    .export-btn:hover::before {
+      content: '';
+      position: absolute;
+      bottom: calc(100% + 2px);
+      right: 20px;
+      border: 5px solid transparent;
+      border-top-color: var(--text-primary);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Chart containers */
+    .chart-box {
+      position: relative;
+      width: 100%;
+    }
+
+    /* Metric comparison cards */
+    .metric-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      transition: var(--transition-base);
+    }
+    .metric-card:hover { box-shadow: var(--shadow-md); }
+
+    .metric-label {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+    }
+    .metric-value {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .metric-sub {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+    }
+    .metric-icon {
+      width: 38px; height: 38px;
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      align-self: flex-end;
+      margin-top: auto;
+    }
+
+    /* Top products table rows */
+    .top-product-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .top-product-row:last-child { border-bottom: none; }
+
+    .rank-badge {
+      width: 24px; height: 24px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    /* Inventory valuation table */
+    .inv-val-bar {
+      height: 6px;
+      background: var(--border-color);
+      border-radius: 3px;
+      overflow: hidden;
+      min-width: 80px;
+    }
+    .inv-val-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.6s ease;
+    }
+
+    /* Daily breakdown table */
+    .breakdown-table th,
+    .breakdown-table td {
+      font-size: var(--text-sm);
+    }
+
+    /* Period tab pills */
+    .period-tabs {
+      display: flex;
+      gap: var(--space-1);
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 3px;
+    }
+    .period-tab {
+      padding: 5px 14px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: var(--text-xs);
+      font-weight: 600;
+      font-family: var(--font-sans);
+      transition: var(--transition-fast);
+      white-space: nowrap;
+    }
+    .period-tab.active {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-xs);
+    }
+    .period-tab:hover:not(.active) { color: var(--text-primary); }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside id="app-sidebar" class="sidebar"></aside>
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+  <div class="app-main" id="app-main">
+
+    <!-- Topbar -->
+    <header class="topbar" id="app-topbar">
+      <div class="topbar-left">
+        <button class="sidebar-toggle" id="sidebar-toggle-btn">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <span class="topbar-title" id="topbar-title">Reports</span>
+      </div>
+      <div class="topbar-right">
+        <button class="theme-toggle"><i class="fa-solid fa-moon"></i></button>
+        <div class="dropdown">
+          <button class="user-avatar-btn dropdown-toggle" data-bs-toggle="dropdown">
+            <div class="user-avatar" id="topbar-avatar">AU</div>
+            <span class="d-none d-md-inline" id="topbar-username">Admin</span>
+            <i class="fa-solid fa-chevron-down" style="font-size:0.65rem;color:var(--text-muted);"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <div style="padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--border-color);">
+                <div style="font-size:var(--text-sm);font-weight:600;" id="topbar-username-dd"></div>
+                <div style="font-size:var(--text-xs);color:var(--text-muted);" id="topbar-userrole"></div>
+              </div>
+            </li>
+            <li>
+              <a class="dropdown-item logout-btn" href="#">
+                <i class="fa-solid fa-right-from-bracket me-2"></i>Sign Out
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- ── Page Header ── -->
+      <div class="page-header">
+        <div>
+          <h1 class="section-title">Reports</h1>
+          <p class="section-subtitle" id="reports-period-label">Loading...</p>
+        </div>
+
+        <!-- Export buttons — disabled in prototype -->
+        <div style="display:flex;gap:var(--space-2);">
+          <button class="btn btn-outline export-btn" disabled>
+            <i class="fa-solid fa-file-csv"></i>
+            <span class="d-none d-sm-inline">Export CSV</span>
+          </button>
+          <button class="btn btn-outline export-btn" disabled>
+            <i class="fa-solid fa-file-pdf"></i>
+            <span class="d-none d-sm-inline">Export PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Period Filter Bar ── -->
+      <div class="card mb-5">
+        <div class="card-body" style="padding:var(--space-4);">
+          <div style="display:flex;align-items:center;gap:var(--space-4);flex-wrap:wrap;">
+
+            <!-- Period tabs -->
+            <div class="period-tabs" id="period-tabs">
+              <button class="period-tab" data-period="today">Today</button>
+              <button class="period-tab" data-period="7">Last 7 Days</button>
+              <button class="period-tab active" data-period="30">Last 30 Days</button>
+              <button class="period-tab" data-period="90">Last 90 Days</button>
+              <button class="period-tab" data-period="custom">Custom</button>
+            </div>
+
+            <!-- Custom date range (hidden unless 'custom' selected) -->
+            <div id="custom-range" style="display:none;display:flex;align-items:center;gap:var(--space-2);">
+              <input type="date" id="custom-from" class="form-control" style="width:auto;">
+              <span style="color:var(--text-muted);font-size:var(--text-sm);">to</span>
+              <input type="date" id="custom-to" class="form-control" style="width:auto;">
+              <button class="btn btn-primary btn-sm" id="apply-custom-btn">Apply</button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════
+           SECTION 1 — Sales Summary Metrics
+      ════════════════════════════════════════════════════════ -->
+      <div class="report-section-title">
+        <i class="fa-solid fa-chart-line"></i> Sales Summary
+      </div>
+
+      <div class="row g-3 mb-5">
+        <div class="col-6 col-md-4 col-lg-2">
+          <div class="metric-card">
+            <div class="metric-label">Revenue</div>
+            <div class="metric-value" id="m-revenue">₦0</div>
+            <div class="metric-sub">Gross sales</div>
+            <div class="metric-icon" style="background:var(--color-primary-light);color:var(--color-primary);">
+              <i class="fa-solid fa-naira-sign"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+          <div class="metric-card">
+            <div class="metric-label">Transactions</div>
+            <div class="metric-value" id="m-count">0</div>
+            <div class="metric-sub">Total sales</div>
+            <div class="metric-icon" style="background:var(--color-success-light);color:var(--color-success);">
+              <i class="fa-solid fa-receipt"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+          <div class="metric-card">
+            <div class="metric-label">Avg. Sale</div>
+            <div class="metric-value" id="m-avg">₦0</div>
+            <div class="metric-sub">Per transaction</div>
+            <div class="metric-icon" style="background:var(--color-warning-light);color:var(--color-warning);">
+              <i class="fa-solid fa-chart-bar"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+          <div class="metric-card">
+            <div class="metric-label">VAT Collected</div>
+            <div class="metric-value" id="m-vat">₦0</div>
+            <div class="metric-sub">7.5% on sales</div>
+            <div class="metric-icon" style="background:var(--color-info-light);color:var(--color-info);">
+              <i class="fa-solid fa-percent"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+          <div class="metric-card">
+            <div class="metric-label">Items Sold</div>
+            <div class="metric-value" id="m-items">0</div>
+            <div class="metric-sub">Total units</div>
+            <div class="metric-icon" style="background:var(--color-primary-light);color:var(--color-primary);">
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+          <div class="metric-card">
+            <div class="metric-label">Discounts</div>
+            <div class="metric-value" id="m-discount">₦0</div>
+            <div class="metric-sub">Total given</div>
+            <div class="metric-icon" style="background:var(--color-danger-light);color:var(--color-danger);">
+              <i class="fa-solid fa-tag"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════
+           SECTION 2 — Revenue & Trend Charts
+      ════════════════════════════════════════════════════════ -->
+      <div class="report-section-title">
+        <i class="fa-solid fa-wave-square"></i> Revenue Trends
+      </div>
+
+      <div class="row g-4 mb-5">
+
+        <!-- Revenue over time (line chart) -->
+        <div class="col-12 col-lg-8">
+          <div class="card h-100">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Revenue Over Time</h3>
+                <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:2px;">
+                  Daily revenue trend for selected period
+                </div>
+              </div>
+              <span class="badge badge-primary" id="trend-total-badge">₦0</span>
+            </div>
+            <div class="card-body">
+              <div class="chart-box" style="height:260px;">
+                <canvas id="revenue-line-chart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment method breakdown (doughnut) -->
+        <div class="col-12 col-lg-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <h3 class="card-title">Payment Breakdown</h3>
+            </div>
+            <div class="card-body">
+              <div class="chart-box" style="height:180px;">
+                <canvas id="payment-donut-chart"></canvas>
+              </div>
+              <div id="payment-legend-report" style="margin-top:var(--space-3);display:flex;flex-wrap:wrap;gap:var(--space-3);"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Sales volume (bar chart) -->
+      <div class="card mb-5">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Daily Transaction Volume</h3>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:2px;">
+              Number of sales per day
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-box" style="height:200px;">
+            <canvas id="volume-bar-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════
+           SECTION 3 — Top Products
+      ════════════════════════════════════════════════════════ -->
+      <div class="report-section-title">
+        <i class="fa-solid fa-trophy"></i> Top Products
+      </div>
+
+      <div class="row g-4 mb-5">
+
+        <!-- Top by quantity -->
+        <div class="col-12 col-md-6">
+          <div class="card h-100">
+            <div class="card-header">
+              <h3 class="card-title">Best Sellers by Quantity</h3>
+              <span class="badge badge-success">Units Sold</span>
+            </div>
+            <div class="card-body py-2" id="top-by-qty">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Top by revenue -->
+        <div class="col-12 col-md-6">
+          <div class="card h-100">
+            <div class="card-header">
+              <h3 class="card-title">Best Sellers by Revenue</h3>
+              <span class="badge badge-primary">Revenue</span>
+            </div>
+            <div class="card-body py-2" id="top-by-revenue">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Top products horizontal bar chart -->
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Top 10 Products — Revenue Comparison</h3>
+            </div>
+            <div class="card-body">
+              <div class="chart-box" style="height:300px;">
+                <canvas id="top-products-chart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════
+           SECTION 4 — Inventory Valuation
+      ════════════════════════════════════════════════════════ -->
+      <div class="report-section-title">
+        <i class="fa-solid fa-warehouse"></i> Inventory Valuation
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="metric-card">
+            <div class="metric-label">Retail Value</div>
+            <div class="metric-value" id="inv-retail">₦0</div>
+            <div class="metric-sub">At selling price</div>
+            <div class="metric-icon" style="background:var(--color-primary-light);color:var(--color-primary);">
+              <i class="fa-solid fa-tags"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="metric-card">
+            <div class="metric-label">Cost Value</div>
+            <div class="metric-value" id="inv-cost">₦0</div>
+            <div class="metric-sub">At cost price</div>
+            <div class="metric-icon" style="background:var(--color-success-light);color:var(--color-success);">
+              <i class="fa-solid fa-naira-sign"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="metric-card">
+            <div class="metric-label">Potential Profit</div>
+            <div class="metric-value" id="inv-profit">₦0</div>
+            <div class="metric-sub">If all stock sold</div>
+            <div class="metric-icon" style="background:var(--color-warning-light);color:var(--color-warning);">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="metric-card">
+            <div class="metric-label">Total Units</div>
+            <div class="metric-value" id="inv-units">0</div>
+            <div class="metric-sub">Across all products</div>
+            <div class="metric-icon" style="background:var(--color-info-light);color:var(--color-info);">
+              <i class="fa-solid fa-cubes"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inventory valuation table by category -->
+      <div class="card mb-5">
+        <div class="card-header">
+          <h3 class="card-title">Stock Value by Product</h3>
+          <div style="display:flex;gap:var(--space-2);">
+            <button class="btn btn-outline export-btn btn-sm" disabled>
+              <i class="fa-solid fa-file-csv"></i> Export
+            </button>
+          </div>
+        </div>
+        <div class="tf-table-wrapper" style="border:none;">
+          <table class="tf-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Stock</th>
+                <th>Cost Price</th>
+                <th>Sell Price</th>
+                <th>Cost Value</th>
+                <th>Retail Value</th>
+                <th>Margin</th>
+                <th>Value Share</th>
+              </tr>
+            </thead>
+            <tbody id="inv-val-tbody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════
+           SECTION 5 — Daily Sales Breakdown
+      ════════════════════════════════════════════════════════ -->
+      <div class="report-section-title">
+        <i class="fa-solid fa-calendar-days"></i> Daily Breakdown
+      </div>
+
+      <div class="card mb-5">
+        <div class="card-header">
+          <h3 class="card-title">Sales by Day</h3>
+          <button class="btn btn-outline export-btn btn-sm" disabled>
+            <i class="fa-solid fa-file-csv"></i> Export
+          </button>
+        </div>
+        <div class="tf-table-wrapper" style="border:none;">
+          <table class="tf-table breakdown-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Day</th>
+                <th>Transactions</th>
+                <th>Items Sold</th>
+                <th>Revenue</th>
+                <th>VAT</th>
+                <th>Avg. Sale</th>
+                <th>Best Product</th>
+              </tr>
+            </thead>
+            <tbody id="daily-tbody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════
+           SECTION 6 — Business Insights
+      ════════════════════════════════════════════════════════ -->
+      <div class="report-section-title">
+        <i class="fa-solid fa-lightbulb"></i> Business Insights
+      </div>
+
+      <div class="card mb-5">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-lightbulb" style="color:var(--color-warning);margin-right:6px;"></i>
+            Smart Insights
+          </h3>
+          <span class="badge badge-warning">Calculated · No AI</span>
+        </div>
+        <div class="card-body" id="insights-body">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="tf-toast-container" class="toast-container"></div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/app.js"></script>
+
+<script>
+/**
+ * Reports Module
+ * ==============
+ * Sections:
+ *  1. Sales Summary Metrics (6 KPIs)
+ *  2. Revenue line chart + Payment doughnut + Volume bar chart
+ *  3. Top products by qty and revenue + horizontal bar chart
+ *  4. Inventory valuation table + KPIs
+ *  5. Daily breakdown table
+ *  6. Smart business insights
+ *
+ * All data is calculated from LocalStorage — no APIs or AI.
+ * Export buttons are disabled with "Available in Production Version" tooltip.
+ */
+const Reports = (() => {
+
+  // ── State ────────────────────────────────────────────────────────────────
+  let currentPeriod = '30'; // '7' | '30' | '90' | 'today' | 'custom'
+  let customFrom    = null;
+  let customTo      = null;
+
+  // Chart instances (destroyed and recreated on period change)
+  let lineChart    = null;
+  let donutChart   = null;
+  let volumeChart  = null;
+  let topProdChart = null;
+
+  // ── Init ─────────────────────────────────────────────────────────────────
+  function init() {
+    // Set default custom date inputs
+    document.getElementById('custom-to').value   = Utils.todayISO();
+    document.getElementById('custom-from').value = Utils.daysAgoISO(30);
+
+    bindEvents();
+    renderAll();
+  }
+
+  // ── Get Filtered Sales ────────────────────────────────────────────────────
+  function getFilteredSales() {
+    const all = Storage.getSales();
+    const now = new Date();
+
+    if (currentPeriod === 'today') {
+      const today = now.toISOString().split('T')[0];
+      return all.filter((s) => s.createdAt?.startsWith(today));
+    }
+
+    if (currentPeriod === 'custom' && customFrom && customTo) {
+      const from = new Date(customFrom + 'T00:00:00');
+      const to   = new Date(customTo   + 'T23:59:59');
+      return all.filter((s) => {
+        const d = new Date(s.createdAt);
+        return d >= from && d <= to;
+      });
+    }
+
+    const days   = parseInt(currentPeriod, 10) || 30;
+    const cutoff = new Date(now);
+    cutoff.setDate(now.getDate() - days);
+    return all.filter((s) => new Date(s.createdAt) >= cutoff);
+  }
+
+  // ── Period Label ──────────────────────────────────────────────────────────
+  function getPeriodLabel() {
+    if (currentPeriod === 'today') return 'Today — ' + Utils.formatDate(Utils.todayISO());
+    if (currentPeriod === 'custom' && customFrom && customTo)
+      return `${Utils.formatDate(customFrom)} – ${Utils.formatDate(customTo)}`;
+    const days = parseInt(currentPeriod, 10) || 30;
+    return `Last ${days} Days (${Utils.formatDate(Utils.daysAgoISO(days))} – ${Utils.formatDate(Utils.todayISO())})`;
+  }
+
+  // ── Render All ────────────────────────────────────────────────────────────
+  function renderAll() {
+    const sales = getFilteredSales();
+    _set('reports-period-label', getPeriodLabel());
+
+    renderSummaryMetrics(sales);
+    renderCharts(sales);
+    renderTopProducts(sales);
+    renderInventoryValuation();
+    renderDailyBreakdown(sales);
+    renderInsights(sales);
+  }
+
+  // ── 1. Summary Metrics ────────────────────────────────────────────────────
+  function renderSummaryMetrics(sales) {
+    const s = Utils.summariseSales(sales);
+    _set('m-revenue',  Utils.formatCurrency(s.totalRevenue, true));
+    _set('m-count',    Utils.formatNumber(s.transactions));
+    _set('m-avg',      Utils.formatCurrency(s.avgTransaction, true));
+    _set('m-vat',      Utils.formatCurrency(s.totalVAT, true));
+    _set('m-items',    Utils.formatNumber(s.totalItems));
+    _set('m-discount', Utils.formatCurrency(s.totalDiscount, true));
+
+    // Trend badge
+    _set('trend-total-badge', Utils.formatCurrency(s.totalRevenue, true) + ' total');
+  }
+
+  // ── 2. Charts ─────────────────────────────────────────────────────────────
+  function renderCharts(sales) {
+    const isDark  = document.documentElement.getAttribute('data-theme') === 'dark';
+    const grid    = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+    const textCol = isDark ? '#64748b' : '#94a3b8';
+
+    // Determine grouping days
+    const days   = currentPeriod === 'today' ? 1
+      : currentPeriod === 'custom' ? _customDays()
+      : parseInt(currentPeriod, 10) || 30;
+
+    const groups = _groupSalesByDay(sales, Math.min(days, 90));
+
+    // ── Revenue Line Chart ──
+    const lineCanvas = document.getElementById('revenue-line-chart');
+    if (lineChart) lineChart.destroy();
+    lineChart = new Chart(lineCanvas, {
+      type: 'line',
+      data: {
+        labels:   groups.map((g) => g.label),
+        datasets: [{
+          label:           'Revenue (₦)',
+          data:            groups.map((g) => g.revenue),
+          borderColor:     '#2563EB',
+          backgroundColor: 'rgba(37,99,235,0.08)',
+          borderWidth:     2.5,
+          pointRadius:     groups.length <= 14 ? 4 : 2,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#2563EB',
+          fill:            true,
+          tension:         0.4,
+        }]
+      },
+      options: _lineOptions(grid, textCol)
+    });
+
+    // ── Volume Bar Chart ──
+    const volCanvas = document.getElementById('volume-bar-chart');
+    if (volumeChart) volumeChart.destroy();
+    volumeChart = new Chart(volCanvas, {
+      type: 'bar',
+      data: {
+        labels:   groups.map((g) => g.label),
+        datasets: [{
+          label:           'Transactions',
+          data:            groups.map((g) => g.count),
+          backgroundColor: 'rgba(16,185,129,0.15)',
+          borderColor:     '#10b981',
+          borderWidth:     2,
+          borderRadius:    4,
+          borderSkipped:   false,
+        }]
+      },
+      options: _barOptions(grid, textCol, false)
+    });
+
+    // ── Payment Doughnut ──
+    const tally = { cash: 0, transfer: 0, card: 0 };
+    sales.forEach((s) => {
+      const m = (s.paymentMethod || 'cash').toLowerCase();
+      if (tally[m] !== undefined) tally[m] += s.total || 0;
+      else tally.cash += s.total || 0;
+    });
+
+    const donutCanvas = document.getElementById('payment-donut-chart');
+    if (donutChart) donutChart.destroy();
+    donutChart = new Chart(donutCanvas, {
+      type: 'doughnut',
+      data: {
+        labels:   ['Cash', 'Transfer', 'Card'],
+        datasets: [{
+          data:            [tally.cash, tally.transfer, tally.card],
+          backgroundColor: ['#10b981', '#2563EB', '#06b6d4'],
+          borderWidth:     0,
+          hoverOffset:     6,
+        }]
+      },
+      options: {
+        responsive:          true,
+        maintainAspectRatio: false,
+        cutout:              '68%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` ${ctx.label}: ${Utils.formatCurrency(ctx.parsed)}`
+            }
+          }
+        }
+      }
+    });
+
+    // Custom doughnut legend
+    const total  = tally.cash + tally.transfer + tally.card || 1;
+    const legend = document.getElementById('payment-legend-report');
+    if (legend) {
+      const colors = { Cash: '#10b981', Transfer: '#2563EB', Card: '#06b6d4' };
+      legend.innerHTML = Object.entries(tally).map(([key, val]) => {
+        const label = key.charAt(0).toUpperCase() + key.slice(1);
+        const pct   = ((val / total) * 100).toFixed(0);
+        return `
+          <div style="display:flex;align-items:center;gap:6px;font-size:var(--text-xs);color:var(--text-secondary);">
+            <div style="width:10px;height:10px;border-radius:2px;background:${colors[label]};flex-shrink:0;"></div>
+            <span>${label}: <strong>${pct}%</strong></span>
+          </div>`;
+      }).join('');
+    }
+  }
+// ── 3. Top Products ───────────────────────────────────────────────────────
+  function renderTopProducts(sales) {
+    const topQty = Utils.getTopProducts(sales, 10);
+    const topRev = [...topQty].sort((a, b) => b.totalRevenue - a.totalRevenue).slice(0, 10);
+
+    const rankColors = ['#f59e0b','#94a3b8','#cd7f32','#2563EB','#10b981',
+                        '#6366f1','#ec4899','#06b6d4','#8b5cf6','#ef4444'];
+
+    // By quantity
+    const qtyEl = document.getElementById('top-by-qty');
+    if (qtyEl) {
+      if (topQty.length === 0) {
+        qtyEl.innerHTML = _emptyMsg('No sales data yet.');
+      } else {
+        const maxQty = topQty[0].totalQty || 1;
+        qtyEl.innerHTML = topQty.slice(0, 7).map((p, i) => {
+          const barW = Math.round((p.totalQty / maxQty) * 100);
+          return `
+            <div class="top-product-row">
+              <div class="rank-badge" style="background:${rankColors[i]}20;color:${rankColors[i]};">
+                ${i + 1}
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:var(--text-sm);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                  ${Utils.escapeHtml(Utils.truncate(p.productName, 28))}
+                </div>
+                <div style="height:4px;background:var(--border-color);border-radius:2px;margin-top:4px;overflow:hidden;">
+                  <div style="height:100%;width:${barW}%;background:${rankColors[i]};border-radius:2px;"></div>
+                </div>
+              </div>
+              <div style="text-align:right;flex-shrink:0;">
+                <div style="font-size:var(--text-sm);font-weight:700;">${p.totalQty} units</div>
+                <div style="font-size:var(--text-xs);color:var(--text-muted);">${Utils.formatCurrency(p.totalRevenue, true)}</div>
+              </div>
+            </div>`;
+        }).join('');
+      }
+    }
+
+    // By revenue
+    const revEl = document.getElementById('top-by-revenue');
+    if (revEl) {
+      if (topRev.length === 0) {
+        revEl.innerHTML = _emptyMsg('No sales data yet.');
+      } else {
+        const maxRev = topRev[0].totalRevenue || 1;
+        revEl.innerHTML = topRev.slice(0, 7).map((p, i) => {
+          const barW = Math.round((p.totalRevenue / maxRev) * 100);
+          return `
+            <div class="top-product-row">
+              <div class="rank-badge" style="background:${rankColors[i]}20;color:${rankColors[i]};">
+                ${i + 1}
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:var(--text-sm);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                  ${Utils.escapeHtml(Utils.truncate(p.productName, 28))}
+                </div>
+                <div style="height:4px;background:var(--border-color);border-radius:2px;margin-top:4px;overflow:hidden;">
+                  <div style="height:100%;width:${barW}%;background:${rankColors[i]};border-radius:2px;"></div>
+                </div>
+              </div>
+              <div style="text-align:right;flex-shrink:0;">
+                <div style="font-size:var(--text-sm);font-weight:700;">${Utils.formatCurrency(p.totalRevenue, true)}</div>
+                <div style="font-size:var(--text-xs);color:var(--text-muted);">${p.totalQty} units</div>
+              </div>
+            </div>`;
+        }).join('');
+      }
+    }
+
+    // Horizontal bar chart — top 10 by revenue
+    const isDark   = document.documentElement.getAttribute('data-theme') === 'dark';
+    const gridCol  = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+    const textCol  = isDark ? '#64748b' : '#94a3b8';
+
+    const chartCanvas = document.getElementById('top-products-chart');
+    if (topProdChart) topProdChart.destroy();
+
+    if (topRev.length === 0) {
+      chartCanvas.parentElement.innerHTML =
+        `<div class="empty-state" style="padding:var(--space-8);">
+           <div class="empty-state-icon"><i class="fa-solid fa-chart-bar"></i></div>
+           <p class="empty-state-title">No sales data</p>
+         </div>`;
+    } else {
+      topProdChart = new Chart(chartCanvas, {
+        type: 'bar',
+        data: {
+          labels:   topRev.map((p) => Utils.truncate(p.productName, 22)),
+          datasets: [{
+            label:           'Revenue (₦)',
+            data:            topRev.map((p) => p.totalRevenue),
+            backgroundColor: rankColors.map((c) => c + '30'),
+            borderColor:     rankColors,
+            borderWidth:     2,
+            borderRadius:    5,
+            borderSkipped:   false,
+          }]
+        },
+        options: {
+          ..._barOptions(gridCol, textCol, false),
+          indexAxis: 'y',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` ${Utils.formatCurrency(ctx.parsed.x)}`
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  // ── 4. Inventory Valuation ────────────────────────────────────────────────
+  function renderInventoryValuation() {
+    const products = Storage.getProducts().filter((p) => p.active);
+
+    const retailTotal  = products.reduce((s, p) => s + p.price * p.stock, 0);
+    const costTotal    = products.reduce((s, p) => s + (p.costPrice || 0) * p.stock, 0);
+    const profitTotal  = retailTotal - costTotal;
+    const unitsTotal   = products.reduce((s, p) => s + p.stock, 0);
+
+    _set('inv-retail', Utils.formatCurrency(retailTotal, true));
+    _set('inv-cost',   Utils.formatCurrency(costTotal,   true));
+    _set('inv-profit', Utils.formatCurrency(profitTotal, true));
+    _set('inv-units',  Utils.formatNumber(unitsTotal));
+
+    const tbody = document.getElementById('inv-val-tbody');
+    if (!tbody) return;
+
+    if (products.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9">${_emptyMsg('No products found.')}</td></tr>`;
+      return;
+    }
+
+    // Sort by retail value descending
+    const sorted = [...products].sort((a, b) => (b.price * b.stock) - (a.price * a.stock));
+    const maxVal = sorted[0] ? sorted[0].price * sorted[0].stock : 1;
+
+    tbody.innerHTML = sorted.map((p) => {
+      const retailVal = p.price * p.stock;
+      const costVal   = (p.costPrice || 0) * p.stock;
+      const margin    = p.price > 0 && p.costPrice
+        ? (((p.price - p.costPrice) / p.price) * 100).toFixed(1) + '%'
+        : '—';
+      const share     = retailTotal > 0
+        ? ((retailVal / retailTotal) * 100).toFixed(1)
+        : 0;
+      const barW      = Math.round((retailVal / maxVal) * 100);
+      const status    = Utils.getStockStatus(p);
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:600;font-size:var(--text-sm);">${Utils.escapeHtml(Utils.truncate(p.name, 26))}</div>
+            <code style="font-size:0.65rem;color:var(--text-muted);">${Utils.escapeHtml(p.sku)}</code>
+          </td>
+          <td style="font-size:var(--text-xs);">${Utils.escapeHtml(p.categoryName || '—')}</td>
+          <td>
+            <span style="font-weight:600;">${Utils.formatNumber(p.stock)}</span>
+            <span style="font-size:var(--text-xs);color:var(--text-muted);"> ${p.unit || ''}</span>
+            &nbsp;<span class="badge ${status.badgeClass}" style="font-size:0.6rem;">${status.label}</span>
+          </td>
+          <td style="font-size:var(--text-sm);">${p.costPrice ? Utils.formatCurrency(p.costPrice) : '—'}</td>
+          <td style="font-size:var(--text-sm);">${Utils.formatCurrency(p.price)}</td>
+          <td style="font-size:var(--text-sm);">${p.costPrice ? Utils.formatCurrency(costVal) : '—'}</td>
+          <td style="font-weight:600;font-size:var(--text-sm);">${Utils.formatCurrency(retailVal)}</td>
+          <td>
+            <span style="font-size:var(--text-sm);color:${p.costPrice ? 'var(--color-success)' : 'var(--text-muted)'};">
+              ${margin}
+            </span>
+          </td>
+          <td style="min-width:110px;">
+            <div style="display:flex;align-items:center;gap:var(--space-2);">
+              <div class="inv-val-bar">
+                <div class="inv-val-bar-fill" style="width:${barW}%;background:var(--color-primary);"></div>
+              </div>
+              <span style="font-size:var(--text-xs);color:var(--text-muted);white-space:nowrap;">${share}%</span>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+  // ── 5. Daily Breakdown Table ──────────────────────────────────────────────
+  function renderDailyBreakdown(sales) {
+    const tbody = document.getElementById('daily-tbody');
+    if (!tbody) return;
+
+    const days   = currentPeriod === 'today' ? 1
+      : currentPeriod === 'custom' ? _customDays()
+      : parseInt(currentPeriod, 10) || 30;
+
+    const groups = _groupSalesByDay(sales, Math.min(days, 90));
+    // Newest first
+    const sorted = [...groups].reverse();
+
+    if (sorted.every((g) => g.count === 0)) {
+      tbody.innerHTML = `<tr><td colspan="8">
+        <div class="empty-state" style="padding:var(--space-6);">
+          <div class="empty-state-icon"><i class="fa-solid fa-calendar-days"></i></div>
+          <p class="empty-state-title">No sales in this period</p>
+        </div>
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = sorted
+      .filter((g) => g.count > 0) // Only show days with sales
+      .map((g) => {
+        const daySales  = sales.filter((s) => s.createdAt?.startsWith(g.date));
+        const items     = daySales.reduce((s, x) =>
+          s + (x.items?.reduce((si, i) => si + i.quantity, 0) || 0), 0);
+        const vat       = daySales.reduce((s, x) => s + (x.vatAmount || 0), 0);
+        const avg       = g.count > 0 ? g.revenue / g.count : 0;
+
+        // Best product this day
+        const top = Utils.getTopProducts(daySales, 1);
+        const bestProd = top[0]
+          ? `${Utils.escapeHtml(Utils.truncate(top[0].productName, 16))} (×${top[0].totalQty})`
+          : '—';
+
+        const dayName = new Date(g.date).toLocaleDateString('en-NG', { weekday: 'long' });
+        const isWeekend = ['Saturday','Sunday'].includes(dayName);
+
+        return `
+          <tr>
+            <td style="font-size:var(--text-sm);font-weight:600;">
+              ${Utils.formatDate(g.date)}
+            </td>
+            <td>
+              <span style="font-size:var(--text-xs);${isWeekend ? 'color:var(--color-primary);font-weight:600;' : 'color:var(--text-muted);'}">
+                ${dayName}
+              </span>
+            </td>
+            <td style="font-size:var(--text-sm);">${g.count}</td>
+            <td style="font-size:var(--text-sm);">${Utils.formatNumber(items)}</td>
+            <td style="font-size:var(--text-sm);font-weight:700;">${Utils.formatCurrency(g.revenue)}</td>
+            <td style="font-size:var(--text-sm);color:var(--text-muted);">${Utils.formatCurrency(vat)}</td>
+            <td style="font-size:var(--text-sm);">${Utils.formatCurrency(avg)}</td>
+            <td style="font-size:var(--text-xs);color:var(--text-secondary);">${bestProd}</td>
+          </tr>`;
+      }).join('');
+  }
+
+  // ── 6. Business Insights ──────────────────────────────────────────────────
+  function renderInsights(sales) {
+    const container = document.getElementById('insights-body');
+    if (!container) return;
+
+    const insights   = [];
+    const s          = Utils.summariseSales(sales);
+    const products   = Storage.getProducts().filter((p) => p.active);
+    const settings   = Storage.getSettings();
+    const thresh     = settings.lowStockThreshold || 10;
+    const days       = currentPeriod === 'today' ? 1
+      : currentPeriod === 'custom' ? _customDays()
+      : parseInt(currentPeriod, 10) || 30;
+
+    // Best day
+    const groups  = _groupSalesByDay(sales, Math.min(days, 90));
+    const bestDay = groups.reduce((b, g) => g.revenue > (b?.revenue || 0) ? g : b, null);
+    if (bestDay && bestDay.revenue > 0) {
+      insights.push({
+        icon: 'fa-trophy', color: 'var(--color-warning)',
+        title: 'Best Sales Day',
+        text:  `Your highest revenue day was <strong>${bestDay.label}</strong> with <strong>${Utils.formatCurrency(bestDay.revenue)}</strong> from ${bestDay.count} transaction${bestDay.count !== 1 ? 's' : ''}.`
+      });
+    }
+
+    // Best product
+    const top = Utils.getTopProducts(sales, 1);
+    if (top.length > 0) {
+      insights.push({
+        icon: 'fa-star', color: 'var(--color-primary)',
+        title: 'Best Seller',
+        text:  `<strong>${Utils.escapeHtml(top[0].productName)}</strong> is your top product with <strong>${top[0].totalQty} units</strong> sold, generating <strong>${Utils.formatCurrency(top[0].totalRevenue)}</strong>.`
+      });
+    }
+
+    // Average transaction
+    if (s.transactions > 0) {
+      insights.push({
+        icon: 'fa-chart-line', color: 'var(--color-success)',
+        title: 'Average Transaction',
+        text:  `Your average transaction value is <strong>${Utils.formatCurrency(s.avgTransaction)}</strong> across <strong>${s.transactions}</strong> sale${s.transactions !== 1 ? 's' : ''}.`
+      });
+    }
+
+    // VAT insight
+    if (s.totalVAT > 0) {
+      insights.push({
+        icon: 'fa-percent', color: 'var(--color-info)',
+        title: 'VAT Collected',
+        text:  `You collected <strong>${Utils.formatCurrency(s.totalVAT)}</strong> in VAT (7.5%) during this period — ensure remittance to FIRS.`
+      });
+    }
+
+    // Low stock warning
+    const lowProds = products.filter((p) => p.stock > 0 && p.stock <= (p.reorderLevel || thresh));
+    if (lowProds.length > 0) {
+      insights.push({
+        icon: 'fa-triangle-exclamation', color: 'var(--color-warning)',
+        title: 'Low Stock Alert',
+        text:  `<strong>${lowProds.length}</strong> product${lowProds.length !== 1 ? 's are' : ' is'} running low on stock: ${lowProds.slice(0, 3).map((p) => `<strong>${Utils.escapeHtml(p.name)}</strong>`).join(', ')}${lowProds.length > 3 ? ` and ${lowProds.length - 3} more` : ''}. Consider restocking soon.`
+      });
+    }
+
+    // Out of stock
+    const outProds = products.filter((p) => p.stock === 0);
+    if (outProds.length > 0) {
+      insights.push({
+        icon: 'fa-circle-xmark', color: 'var(--color-danger)',
+        title: 'Out of Stock',
+        text:  `<strong>${outProds.length}</strong> product${outProds.length !== 1 ? 's are' : ' is'} completely out of stock and unavailable for sale. Restock immediately to avoid lost revenue.`
+      });
+    }
+
+    // Dead stock (products with no sales in period)
+    if (sales.length > 0) {
+      const soldIds  = new Set(sales.flatMap((s) => (s.items || []).map((i) => i.productId)));
+      const deadStock = products.filter((p) => p.stock > 0 && !soldIds.has(p.id));
+      if (deadStock.length > 0) {
+        insights.push({
+          icon: 'fa-box', color: 'var(--color-warning)',
+          title: 'Dead Stock',
+          text:  `<strong>${deadStock.length}</strong> product${deadStock.length !== 1 ? 's have' : ' has'} not sold in this period: ${deadStock.slice(0, 3).map((p) => `<strong>${Utils.escapeHtml(p.name)}</strong>`).join(', ')}${deadStock.length > 3 ? ` and ${deadStock.length - 3} more` : ''}. Consider promotions to move inventory.`
+        });
+      }
+    }
+
+    // Inventory value
+    const retailTotal = products.reduce((s, p) => s + p.price * p.stock, 0);
+    if (retailTotal > 0) {
+      insights.push({
+        icon: 'fa-warehouse', color: 'var(--color-success)',
+        title: 'Inventory Value',
+        text:  `Your current inventory is valued at <strong>${Utils.formatCurrency(retailTotal)}</strong> (retail price). This represents ${products.length} active products.`
+      });
+    }
+
+    if (insights.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state" style="padding:var(--space-8);">
+          <div class="empty-state-icon"><i class="fa-solid fa-lightbulb"></i></div>
+          <p class="empty-state-title">Make some sales first</p>
+          <p class="empty-state-desc">Insights will appear here once you have sales data for this period.</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:var(--space-4);">
+        ${insights.map((ins) => `
+          <div style="
+            display:flex;gap:var(--space-3);
+            padding:var(--space-4);
+            background:var(--bg-surface-2);
+            border:1px solid var(--border-color);
+            border-left:3px solid ${ins.color};
+            border-radius:var(--radius-md);
+          ">
+            <div style="
+              width:34px;height:34px;border-radius:var(--radius-sm);
+              background:${ins.color}18;color:${ins.color};
+              display:flex;align-items:center;justify-content:center;
+              font-size:0.9rem;flex-shrink:0;
+            ">
+              <i class="fa-solid ${ins.icon}"></i>
+            </div>
+            <div>
+              <div style="font-size:var(--text-sm);font-weight:700;color:var(--text-primary);margin-bottom:4px;">
+                ${ins.title}
+              </div>
+              <div style="font-size:var(--text-xs);color:var(--text-secondary);line-height:1.6;">
+                ${ins.text}
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+  }
+  // ── Chart Option Factories ─────────────────────────────────────────────────
+  function _lineOptions(grid, textCol) {
+    return {
+      responsive:          true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: (ctx) => ` ${Utils.formatCurrency(ctx.parsed.y)}` }
+        }
+      },
+      scales: {
+        x: { grid: { color: grid }, ticks: { color: textCol, font: { size: 11 } } },
+        y: {
+          grid: { color: grid },
+          ticks: {
+            color: textCol, font: { size: 11 },
+            callback: (v) => Utils.formatCurrency(v, true)
+          },
+          beginAtZero: true
+        }
+      }
+    };
+  }
+
+  function _barOptions(grid, textCol, horizontal = false) {
+    return {
+      responsive:          true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => horizontal
+              ? ` ${Utils.formatCurrency(ctx.parsed.x)}`
+              : ` ${ctx.parsed.y}`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: grid }, ticks: { color: textCol, font: { size: 11 } } },
+        y: {
+          grid: { color: grid },
+          ticks: { color: textCol, font: { size: 11 } },
+          beginAtZero: true
+        }
+      }
+    };
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  /**
+   * Group sales by day — extended version with configurable day range.
+   * Handles both forward (last N days) and custom date ranges.
+   */
+  function _groupSalesByDay(sales, days) {
+    const result = [];
+
+    if (currentPeriod === 'custom' && customFrom && customTo) {
+      // Build date range from customFrom to customTo
+      const from = new Date(customFrom + 'T00:00:00');
+      const to   = new Date(customTo   + 'T00:00:00');
+      const d    = new Date(from);
+      while (d <= to) {
+        const dateKey = d.toISOString().split('T')[0];
+        const daySales = sales.filter((s) => s.createdAt?.startsWith(dateKey));
+        result.push({
+          date:    dateKey,
+          label:   d.toLocaleDateString('en-NG', { month: 'short', day: 'numeric' }),
+          revenue: daySales.reduce((s, x) => s + (x.total || 0), 0),
+          count:   daySales.length,
+        });
+        d.setDate(d.getDate() + 1);
+      }
+      return result;
+    }
+
+    // Last N days
+    for (let i = days - 1; i >= 0; i--) {
+      const d       = new Date();
+      d.setDate(d.getDate() - i);
+      const dateKey = d.toISOString().split('T')[0];
+      const daySales = sales.filter((s) => s.createdAt?.startsWith(dateKey));
+      result.push({
+        date:    dateKey,
+        label:   d.toLocaleDateString('en-NG', {
+          month:  days <= 14 ? 'short' : 'short',
+          day:    'numeric',
+          weekday: days <= 7 ? 'short' : undefined,
+        }),
+        revenue: daySales.reduce((s, x) => s + (x.total || 0), 0),
+        count:   daySales.length,
+      });
+    }
+    return result;
+  }
+
+  function _customDays() {
+    if (!customFrom || !customTo) return 30;
+    const ms = new Date(customTo) - new Date(customFrom);
+    return Math.max(1, Math.ceil(ms / (1000 * 60 * 60 * 24)) + 1);
+  }
+
+  function _emptyMsg(text) {
+    return `<div class="empty-state" style="padding:var(--space-6);">
+      <div class="empty-state-icon" style="width:40px;height:40px;"><i class="fa-solid fa-chart-bar"></i></div>
+      <p class="empty-state-title" style="font-size:var(--text-sm);">${text}</p>
+    </div>`;
+  }
+
+  function _set(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  // ── Event Binding ─────────────────────────────────────────────────────────
+  function bindEvents() {
+    // Period tab buttons
+    document.getElementById('period-tabs')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.period-tab');
+      if (!btn) return;
+
+      document.querySelectorAll('.period-tab').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentPeriod = btn.dataset.period;
+
+      const customRange = document.getElementById('custom-range');
+      if (currentPeriod === 'custom') {
+        customRange.style.display = 'flex';
+      } else {
+        customRange.style.display = 'none';
+        renderAll();
+      }
+    });
+
+    // Apply custom range
+    document.getElementById('apply-custom-btn')?.addEventListener('click', () => {
+      customFrom = document.getElementById('custom-from').value;
+      customTo   = document.getElementById('custom-to').value;
+      if (!customFrom || !customTo) {
+        Utils.toastWarning('Date Required', 'Please select both From and To dates.');
+        return;
+      }
+      if (new Date(customFrom) > new Date(customTo)) {
+        Utils.toastError('Invalid Range', '"From" date must be before "To" date.');
+        return;
+      }
+      renderAll();
+    });
+
+    // Prevent export buttons from doing anything (they're disabled but just in case)
+    document.querySelectorAll('.export-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        Utils.toastInfo(
+          'Export Unavailable',
+          'CSV and PDF exports are available in the Production Version.'
+        );
+      });
+    });
+
+    // Re-render charts when theme changes
+    const observer = new MutationObserver(() => renderAll());
+    observer.observe(document.documentElement, {
+      attributes: true, attributeFilter: ['data-theme']
+    });
+  }
+
+  // Public API
+  return { init };
+
+})();
+
+document.addEventListener('DOMContentLoaded', () => {
+  App.init({
+    pageTitle: 'Reports',
+    onReady:   () => Reports.init(),
+  });
+});
+</script>
+</body>
+</html>
+        

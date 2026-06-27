@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en-NG" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — TradeFlow</title>
+  <link rel="manifest" href="../manifest.json">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <style>
+    /*
+     * Settings — page-specific styles
+     */
+
+    /* Settings layout: two-column on desktop (nav + content) */
+    .settings-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: var(--space-6);
+      align-items: start;
+    }
+
+    /* Left nav panel */
+    .settings-nav {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: var(--space-3);
+      position: sticky;
+      top: calc(var(--topbar-height) + var(--space-6));
+    }
+
+    .settings-nav-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-3);
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      text-decoration: none;
+      margin-bottom: 2px;
+    }
+    .settings-nav-item:hover {
+      background: var(--bg-surface-2);
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+    .settings-nav-item.active {
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+    }
+    .settings-nav-item i {
+      width: 18px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    /* Settings section card */
+    .settings-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: var(--space-5);
+      scroll-margin-top: calc(var(--topbar-height) + var(--space-6) + 20px);
+    }
+
+    .settings-section-header {
+      padding: var(--space-5) var(--space-6);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .settings-section-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .settings-section-title {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .settings-section-desc {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .settings-section-body {
+      padding: var(--space-6);
+    }
+
+    /* Setting row — label on left, control on right */
+    .setting-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-6);
+      padding: var(--space-4) 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .setting-row:last-child { border-bottom: none; }
+
+    .setting-row-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .setting-row-label {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .setting-row-hint {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .setting-row-control {
+      flex-shrink: 0;
+      min-width: 200px;
+    }
+
+    /* Toggle switch */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 26px;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: var(--border-color);
+      border-radius: 26px;
+      transition: var(--transition-base);
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: var(--transition-base);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background: var(--color-primary);
+    }
+    .toggle-switch input:checked + .toggle-slider::before {
+      transform: translateX(20px);
+    }
+
+    /* Theme selector cards */
+    .theme-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+    }
+
+    .theme-option {
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      cursor: pointer;
+      transition: var(--transition-fast);
+      text-align: center;
+    }
+    .theme-option:hover { border-color: var(--color-primary); }
+    .theme-option.active {
+      border-color: var(--color-primary);
+      background: var(--color-primary-light);
+    }
+
+    .theme-preview {
+      height: 60px;
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      overflow: hidden;
+    }
+
+    .theme-preview-light {
+      background: #f0f4f8;
+      border: 1px solid #e2e8f0;
+    }
+    .theme-preview-dark {
+      background: #0a0f1e;
+      border: 1px solid #1e293b;
+    }
+
+    .theme-option-label {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Danger zone */
+    .danger-zone {
+      border: 1px solid var(--color-danger);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: var(--space-5);
+    }
+
+    .danger-zone-header {
+      padding: var(--space-4) var(--space-6);
+      background: var(--color-danger-light);
+      border-bottom: 1px solid var(--color-danger);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .danger-zone-title {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: var(--color-danger);
+    }
+
+    .danger-zone-body {
+      padding: var(--space-5) var(--space-6);
+      background: var(--bg-surface);
+    }
+
+    /* About card */
+    .about-logo {
+      width: 64px;
+      height: 64px;
+      background: var(--color-primary);
+      border-radius: var(--radius-xl);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      color: white;
+      margin-bottom: var(--space-4);
+    }
+
+    /* Backup/restore area */
+    .backup-area {
+      background: var(--bg-surface-2);
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+    .backup-area:hover {
+      border-color: var(--color-primary);
+      background: var(--color-primary-light);
+    }
+    .backup-area.drag-over {
+      border-color: var(--color-primary);
+      background: var(--color-primary-light);
+    }
+
+    /* Responsive: stack on mobile */
+    @media (max-width: 768px) {
+      .settings-layout {
+        grid-template-columns: 1fr;
+      }
+      .settings-nav {
+        position: static;
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1);
+        padding: var(--space-2);
+      }
+      .settings-nav-item {
+        margin-bottom: 0;
+        font-size: var(--text-xs);
+        padding: var(--space-2) var(--space-3);
+      }
+      .setting-row {
+        flex-direction: column;
+        gap: var(--space-3);
+      }
+      .setting-row-control { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside id="app-sidebar" class="sidebar"></aside>
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+  <div class="app-main" id="app-main">
+
+    <!-- Topbar -->
+    <header class="topbar" id="app-topbar">
+      <div class="topbar-left">
+        <button class="sidebar-toggle" id="sidebar-toggle-btn">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <span class="topbar-title" id="topbar-title">Settings</span>
+      </div>
+      <div class="topbar-right">
+        <button class="theme-toggle"><i class="fa-solid fa-moon"></i></button>
+        <div class="dropdown">
+          <button class="user-avatar-btn dropdown-toggle" data-bs-toggle="dropdown">
+            <div class="user-avatar" id="topbar-avatar">AU</div>
+            <span class="d-none d-md-inline" id="topbar-username">Admin</span>
+            <i class="fa-solid fa-chevron-down" style="font-size:0.65rem;color:var(--text-muted);"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <div style="padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--border-color);">
+                <div style="font-size:var(--text-sm);font-weight:600;" id="topbar-username-dd"></div>
+                <div style="font-size:var(--text-xs);color:var(--text-muted);" id="topbar-userrole"></div>
+              </div>
+            </li>
+            <li>
+              <a class="dropdown-item logout-btn" href="#">
+                <i class="fa-solid fa-right-from-bracket me-2"></i>Sign Out
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1 class="section-title">Settings</h1>
+          <p class="section-subtitle">Manage your business profile, preferences, and data.</p>
+        </div>
+      </div>
+
+      <!-- Settings Layout -->
+      <div class="settings-layout">
+
+        <!-- ── Left: Settings Nav ── -->
+        <nav class="settings-nav" aria-label="Settings navigation">
+          <a class="settings-nav-item active" href="#business-info">
+            <i class="fa-solid fa-building"></i> Business Info
+          </a>
+          <a class="settings-nav-item" href="#tax-settings">
+            <i class="fa-solid fa-percent"></i> Tax & Currency
+          </a>
+          <a class="settings-nav-item" href="#app-preferences">
+            <i class="fa-solid fa-sliders"></i> Preferences
+          </a>
+          <a class="settings-nav-item" href="#theme-settings">
+            <i class="fa-solid fa-palette"></i> Appearance
+          </a>
+          <a class="settings-nav-item" href="#data-backup">
+            <i class="fa-solid fa-database"></i> Data & Backup
+          </a>
+          <a class="settings-nav-item" href="#danger-zone-section">
+            <i class="fa-solid fa-triangle-exclamation" style="color:var(--color-danger);"></i>
+            Danger Zone
+          </a>
+          <a class="settings-nav-item" href="#about-section">
+            <i class="fa-solid fa-circle-info"></i> About
+          </a>
+        </nav>
+
+        <!-- ── Right: Settings Content ── -->
+        <div>
+
+          <!-- ════════════════════════════════════════
+               SECTION 1 — Business Information
+          ═════════════════════════════════════════ -->
+          <div class="settings-section" id="business-info">
+            <div class="settings-section-header">
+              <div class="settings-section-icon"
+                style="background:var(--color-primary-light);color:var(--color-primary);">
+                <i class="fa-solid fa-building"></i>
+              </div>
+              <div>
+                <div class="settings-section-title">Business Information</div>
+                <div class="settings-section-desc">
+                  This information appears on receipts and reports.
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section-body">
+              <div class="row g-4">
+
+                <div class="col-12">
+                  <label class="form-label" for="s-biz-name">Business Name</label>
+                  <input type="text" id="s-biz-name" class="form-control"
+                    placeholder="e.g. Adekunle General Stores">
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label" for="s-biz-address">Business Address</label>
+                  <textarea id="s-biz-address" class="form-control" rows="2"
+                    placeholder="e.g. 15 Broad Street, Lagos Island, Lagos State"></textarea>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label" for="s-biz-phone">Phone Number</label>
+                  <div class="input-group">
+                    <span class="input-group-icon"><i class="fa-solid fa-phone"></i></span>
+                    <input type="tel" id="s-biz-phone" class="form-control"
+                      placeholder="+234 800 000 0000">
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label" for="s-biz-email">Email Address
+                    <span class="form-label-muted">(optional)</span>
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-icon"><i class="fa-regular fa-envelope"></i></span>
+                    <input type="email" id="s-biz-email" class="form-control"
+                      placeholder="info@mybusiness.ng">
+                  </div>
+                </div>
+
+              </div>
+
+              <div style="margin-top:var(--space-5);display:flex;justify-content:flex-end;">
+                <button class="btn btn-primary" id="save-business-btn">
+                  <i class="fa-solid fa-floppy-disk"></i> Save Business Info
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ════════════════════════════════════════
+               SECTION 2 — Tax & Currency
+          ═════════════════════════════════════════ -->
+          <div class="settings-section" id="tax-settings">
+            <div class="settings-section-header">
+              <div class="settings-section-icon"
+                style="background:var(--color-success-light);color:var(--color-success);">
+                <i class="fa-solid fa-percent"></i>
+              </div>
+              <div>
+                <div class="settings-section-title">Tax & Currency</div>
+                <div class="settings-section-desc">
+                  Configure VAT rate and currency for your business.
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section-body">
+
+              <div class="setting-row">
+                <div class="setting-row-info">
+                  <div class="setting-row-label">Currency</div>
+                  <div class="setting-row-hint">
+                    The currency used for all pricing and reports.
+                  </div>
+                </div>
+                <div class="setting-row-control">
+                  <select id="s-currency" class="form-control form-select">
+                    <option value="NGN">₦ Nigerian Naira (NGN)</option>
+                    <option value="USD">$ US Dollar (USD)</option>
+                    <option value="GBP">£ British Pound (GBP)</option>
+                    <option value="EUR">€ Euro (EUR)</option>
+                    <option value="GHS">₵ Ghanaian Cedi (GHS)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-row-info">
+                  <div class="setting-row-label">Enable VAT</div>
+                  <div class="setting-row-hint">
+                    Automatically add VAT to all POS sales.
+                    Required for VAT-registered businesses in Nigeria.
+                  </div>
+                </div>
+                <div class="setting-row-control" style="display:flex;align-items:center;">
+                  <label class="toggle-switch" title="Toggle VAT">
+                    <input type="checkbox" id="s-vat-enabled" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="setting-row" id="vat-rate-row">
+                <div class="setting-row-info">
+                  <div class="setting-row-label">VAT Rate (%)</div>
+                  <div class="setting-row-hint">
+                    Standard Nigerian VAT rate is 7.5% as set by FIRS.
+                    Change only if your business qualifies for a different rate.
+                  </div>
+                </div>
+                <div class="setting-row-control">
+                  <div style="display:flex;align-items:center;gap:var(--space-2);">
+                    <input type="number" id="s-vat-rate" class="form-control"
+                      value="7.5" min="0" max="100" step="0.1"
+                      style="max-width:100px;">
+                    <span style="color:var(--text-muted);font-size:var(--text-sm);">%</span>
+                  </div>
+                  <div class="form-hint">Currently: <strong id="current-vat-label">7.5%</strong></div>
+                </div>
+              </div>
+
+              <div style="margin-top:var(--space-5);display:flex;justify-content:flex-end;">
+                <button class="btn btn-primary" id="save-tax-btn">
+                  <i class="fa-solid fa-floppy-disk"></i> Save Tax Settings
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ════════════════════════════════════════
+               SECTION 3 — App Preferences
+          ═════════════════════════════════════════ -->
+          <div class="settings-section" id="app-preferences">
+            <div class="settings-section-header">
+              <div class="settings-section-icon"
+                style="background:var(--color-warning-light);color:var(--color-warning);">
+                <i class="fa-solid fa-sliders"></i>
+              </div>
+              <div>
+                <div class="settings-section-title">Preferences</div>
+                <div class="settings-section-desc">
+                  Inventory alerts and display preferences.
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section-body">
+
+              <div class="setting-row">
+                <div class="setting-row-info">
+                  <div class="setting-row-label">Low Stock Threshold</div>
+                  <div class="setting-row-hint">
+                    Trigger a low stock alert when any product's stock falls
+                    below this number of units.
+                  </div>
+                </div>
+                <div class="setting-row-control">
+                  <div style="display:flex;align-items:center;gap:var(--space-2);">
+                    <input type="number" id="s-low-stock" class="form-control"
+                      min="1" max="9999"
+                      style="max-width:100px;">
+                    <span style="color:var(--text-muted);font-size:var(--text-sm);">units</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-row-info">
+                  <div class="setting-row-label">Timezone</div>
+                  <div class="setting-row-hint">
+                    Used for date/time display and daily report grouping.
+                  </div>
+                </div>
+                <div class="setting-row-control">
+                  <select id="s-timezone" class="form-control form-select">
+                    <option value="Africa/Lagos">Africa/Lagos (WAT, UTC+1)</option>
+                    <option value="Africa/Accra">Africa/Accra (GMT, UTC+0)</option>
+                    <option value="Africa/Nairobi">Africa/Nairobi (EAT, UTC+3)</option>
+                    <option value="Europe/London">Europe/London (GMT/BST)</option>
+                    <option value="America/New_York">America/New_York (EST/EDT)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="margin-top:var(--space-5);display:flex;justify-content:flex-end;">
+                <button class="btn btn-primary" id="save-prefs-btn">
+                  <i class="fa-solid fa-floppy-disk"></i> Save Preferences
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ════════════════════════════════════════
+               SECTION 4 — Appearance / Theme
+          ═════════════════════════════════════════ -->
+          <div class="settings-section" id="theme-settings">
+            <div class="settings-section-header">
+              <div class="settings-section-icon"
+                style="background:var(--color-info-light);color:var(--color-info);">
+                <i class="fa-solid fa-palette"></i>
+              </div>
+              <div>
+                <div class="settings-section-title">Appearance</div>
+                <div class="settings-section-desc">
+                  Choose your preferred colour theme.
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section-body">
+
+              <div style="margin-bottom:var(--space-4);">
+                <div class="form-label">Colour Theme</div>
+                <div class="theme-selector">
+
+                  <div class="theme-option" id="theme-light-opt" onclick="SettingsPage.setTheme('light')">
+                    <div class="theme-preview theme-preview-light">
+                      <div style="display:flex;gap:4px;">
+                        <div style="width:16px;height:10px;background:#2563EB;border-radius:2px;"></div>
+                        <div style="width:28px;height:10px;background:#e2e8f0;border-radius:2px;"></div>
+                        <div style="width:20px;height:10px;background:#f0f4f8;border-radius:2px;"></div>
+                      </div>
+                    </div>
+                    <div class="theme-option-label">
+                      <i class="fa-solid fa-sun" style="color:var(--color-warning);margin-right:4px;"></i>
+                      Light Mode
+                    </div>
+                  </div>
+
+                  <div class="theme-option" id="theme-dark-opt" onclick="SettingsPage.setTheme('dark')">
+                    <div class="theme-preview theme-preview-dark">
+                      <div style="display:flex;gap:4px;">
+                        <div style="width:16px;height:10px;background:#2563EB;border-radius:2px;"></div>
+                        <div style="width:28px;height:10px;background:#1e293b;border-radius:2px;"></div>
+                        <div style="width:20px;height:10px;background:#0a0f1e;border-radius:2px;"></div>
+                      </div>
+                    </div>
+                    <div class="theme-option-label">
+                      <i class="fa-solid fa-moon" style="color:var(--color-primary);margin-right:4px;"></i>
+                      Dark Mode
+                    </div>
+                  </div>
+
+                </div>
+                <div class="form-hint" style="margin-top:var(--space-3);">
+                  Your preference is saved automatically and persists across sessions.
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ════════════════════════════════════════
+               SECTION 5 — Data & Backup
+          ═════════════════════════════════════════ -->
+          <div class="settings-section" id="data-backup">
+            <div class="settings-section-header">
+              <div class="settings-section-icon"
+                style="background:var(--color-success-light);color:var(--color-success);">
+                <i class="fa-solid fa-database"></i>
+              </div>
+              <div>
+                <div class="settings-section-title">Data & Backup</div>
+                <div class="settings-section-desc">
+                  Export all your data for safekeeping or import a previous backup.
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section-body">
+
+              <!-- Storage usage -->
+              <div style="
+                background:var(--bg-surface-2);
+                border:1px solid var(--border-color);
+                border-radius:var(--radius-md);
+                padding:var(--space-4) var(--space-5);
+                margin-bottom:var(--space-5);
+              ">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3);">
+                  <span style="font-size:var(--text-sm);font-weight:600;">LocalStorage Usage</span>
+                  <span style="font-size:var(--text-xs);color:var(--text-muted);" id="storage-used">Calculating...</span>
+                </div>
+                <div style="height:8px;background:var(--border-color);border-radius:4px;overflow:hidden;">
+                  <div id="storage-bar"
+                    style="height:100%;width:0%;background:var(--color-primary);border-radius:4px;transition:width 0.5s ease;">
+                  </div>
+                </div>
+                <div style="
+                  display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));
+                  gap:var(--space-3);margin-top:var(--space-4);
+                ">
+                  <div style="text-align:center;">
+                    <div style="font-size:var(--text-lg);font-weight:700;" id="storage-products">0</div>
+                    <div style="font-size:var(--text-xs);color:var(--text-muted);">Products</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-size:var(--text-lg);font-weight:700;" id="storage-sales">0</div>
+                    <div style="font-size:var(--text-muted);font-size:var(--text-xs);">Sales</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-size:var(--text-lg);font-weight:700;" id="storage-moves">0</div>
+                    <div style="font-size:var(--text-xs);color:var(--text-muted);">Movements</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-size:var(--text-lg);font-weight:700;" id="storage-alerts">0</div>
+                    <div style="font-size:var(--text-xs);color:var(--text-muted);">Alerts</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Backup buttons -->
+              <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-5);flex-wrap:wrap;">
+                <button class="btn btn-primary" id="backup-btn">
+                  <i class="fa-solid fa-download"></i> Download Backup
+                </button>
+                <button class="btn btn-outline" id="copy-backup-btn">
+                  <i class="fa-solid fa-copy"></i> Copy to Clipboard
+                </button>
+              </div>
+
+              <!-- Restore area -->
+              <div>
+                <div class="form-label" style="margin-bottom:var(--space-3);">
+                  Restore from Backup
+                </div>
+                <div
+                  class="backup-area"
+                  id="restore-drop-area"
+                  role="button"
+                  tabindex="0"
+                  onclick="document.getElementById('restore-file-input').click()"
+                  onkeydown="if(event.key==='Enter')document.getElementById('restore-file-input').click()"
+                  aria-label="Click to select backup file"
+                >
+                  <i class="fa-solid fa-upload" style="font-size:1.5rem;color:var(--text-muted);margin-bottom:var(--space-2);display:block;"></i>
+                  <div style="font-size:var(--text-sm);font-weight:600;color:var(--text-secondary);">
+                    Click to select a backup file
+                  </div>
+                  <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:4px;">
+                    or drag and drop a .json file here
+                  </div>
+                </div>
+                <input type="file" id="restore-file-input" accept=".json" style="display:none;">
+
+                <div
+                  id="restore-preview"
+                  style="display:none;margin-top:var(--space-4);"
+                >
+                  <!-- Populated after file selected -->
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ════════════════════════════════════════
+               SECTION 6 — Danger Zone
+          ═════════════════════════════════════════ -->
+          <div class="danger-zone" id="danger-zone-section">
+            <div class="danger-zone-header">
+              <i class="fa-solid fa-triangle-exclamation" style="color:var(--color-danger);font-size:1.1rem;"></i>
+              <div>
+                <div class="danger-zone-title">Danger Zone</div>
+                <div style="font-size:var(--text-xs);color:var(--color-danger);opacity:0.8;">
+                  These actions are irreversible. Proceed with extreme caution.
+                </div>
+              </div>
+            </div>
+            <div class="danger-zone-body">
+
+              <div class="setting-row">
+                <div class="setting-row-info">
+                  <div class="setting-row-label">Clear Sales History</div>
+                  <div class="setting-row-hint">
+                    Permanently delete all recorded sales transactions.
+                    Products and inventory data will not be affected.
+                  </div>
+                </div>
+                <div class="setting-row-control">
+                  <button class="btn btn-outline btn-sm" id="clear-sales-btn"
+                    style="border-color:var(--color-danger);color:var(--color-danger);">
+                    <i class="fa-solid fa-trash-can"></i> Clear Sales
+                  </button>
+                </div>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-row-info">
+                  <div class="setting-row-label">Clear Stock Movements</div>
+                  <div class="setting-row-hint">
+                    Permanently delete the entire stock movement history log.
+                    Current stock levels will not change.
+                  </div>
+                </div>
+                <div class="setting-row-control">
+                  <button class="btn btn-outline btn-sm" id="clear-moves-btn"
+                    style="border-color:var(--color-danger);color:var(--color-danger);">
+                    <i class="fa-solid fa-trash-can"></i> Clear Movements
+                  </button>
+                </div>
+              </div>
+
+              <div class="setting-row" style="border-bottom:none;">
+                <div class="setting-row-info">
+                  <div class="setting-row-label">Reset All Data</div>
+                  <div class="setting-row-hint">
+                    Completely wipe the application and restore factory defaults.
+                    <strong>All products, sales, settings, and history will be permanently lost.</strong>
+                    Download a backup first!
+                  </div>
+                </div>
+                <div class="setting-row-control">
+                  <button class="btn btn-danger btn-sm" id="reset-system-btn">
+                    <i class="fa-solid fa-rotate-left"></i> Reset System
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!--════════════════════════════════════════
+               SECTION 7 — About
+          ═════════════════════════════════════════ -->
+          <div class="settings-section" id="about-section">
+            <div class="settings-section-header">
+              <div class="settings-section-icon"
+                style="background:var(--color-primary-light);color:var(--color-primary);">
+                <i class="fa-solid fa-circle-info"></i>
+              </div>
+              <div>
+                <div class="settings-section-title">About TradeFlow</div>
+                <div class="settings-section-desc">
+                  Application information and credits.
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section-body" style="text-align:center;padding:var(--space-8) var(--space-6);">
+              <div class="about-logo" style="margin:0 auto;">
+                <i class="fa-solid fa-bolt"></i>
+              </div>
+              <h2 style="font-size:var(--text-2xl);font-weight:800;letter-spacing:-0.03em;margin-bottom:4px;">
+                TradeFlow
+              </h2>
+              <p style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-5);">
+                Data-Driven Inventory and Sales Management Platform
+              </p>
+
+              <div style="
+                display:inline-grid;
+                grid-template-columns:1fr 1fr;
+                gap:var(--space-3);
+                text-align:left;
+                margin-bottom:var(--space-6);
+                min-width:280px;
+              ">
+                <div style="background:var(--bg-surface-2);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);">
+                  <div style="font-size:var(--text-xs);color:var(--text-muted);">Version</div>
+                  <div style="font-size:var(--text-sm);font-weight:600;">1.0.0</div>
+                </div>
+                <div style="background:var(--bg-surface-2);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);">
+                  <div style="font-size:var(--text-xs);color:var(--text-muted);">Build Type</div>
+                  <div style="font-size:var(--text-sm);font-weight:600;">Frontend Prototype</div>
+                </div>
+                <div style="background:var(--bg-surface-2);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);">
+                  <div style="font-size:var(--text-xs);color:var(--text-muted);">Storage</div>
+                  <div style="font-size:var(--text-sm);font-weight:600;">LocalStorage</div>
+                </div>
+                <div style="background:var(--bg-surface-2);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);">
+                  <div style="font-size:var(--text-xs);color:var(--text-muted);">Platform</div>
+                  <div style="font-size:var(--text-sm);font-weight:600;">PWA — Offline Ready</div>
+                </div>
+                <div style="background:var(--bg-surface-2);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);">
+                  <div style="font-size:var(--text-xs);color:var(--text-muted);">Stack</div>
+                  <div style="font-size:var(--text-sm);font-weight:600;">HTML5 · CSS3 · JS ES6</div>
+                </div>
+                <div style="background:var(--bg-surface-2);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);">
+                  <div style="font-size:var(--text-xs);color:var(--text-muted);">Target Market</div>
+                  <div style="font-size:var(--text-sm);font-weight:600;">Nigerian SMEs</div>
+                </div>
+              </div>
+
+              <div style="
+                background:var(--bg-surface-2);
+                border:1px solid var(--border-color);
+                border-radius:var(--radius-lg);
+                padding:var(--space-5);
+                margin-bottom:var(--space-4);
+                text-align:left;
+              ">
+                <div style="font-size:var(--text-xs);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:var(--space-3);">
+                  Technology Stack
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:var(--space-2);">
+                  ${['HTML5','CSS3','Bootstrap 5','Vanilla JavaScript ES6',
+                     'Chart.js 4','Font Awesome 6','LocalStorage API',
+                     'Service Worker','PWA Manifest'].map((tech) =>
+                    `<span class="badge badge-neutral" style="font-size:0.7rem;">${tech}</span>`
+                  ).join('')}
+                </div>
+              </div>
+
+              <p style="font-size:var(--text-xs);color:var(--text-muted);line-height:1.7;">
+                Inventory & Sales Management Platform
+ Developed by Feyisara Okunola.<br>
+                All data is stored locally in your browser — no backend required.
+              </p>
+
+              <div style="margin-top:var(--space-5);padding-top:var(--space-5);border-top:1px solid var(--border-color);">
+                <p style="font-size:var(--text-xs);color:var(--text-muted);">
+                  &copy; 2026 TradeFlow &nbsp;·&nbsp;  Prototype Version 1.0
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /settings content -->
+      </div><!-- /settings layout -->
+
+    </main>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CONFIRM MODAL (reused for all danger zone actions)
+═══════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="confirm-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">
+    <div class="modal-content">
+      <div class="modal-body" style="padding:var(--space-6);text-align:center;">
+        <div id="confirm-modal-icon"
+          style="width:56px;height:56px;border-radius:var(--radius-xl);background:var(--color-danger-light);
+          color:var(--color-danger);display:flex;align-items:center;justify-content:center;
+          font-size:1.4rem;margin:0 auto var(--space-4);">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h5 id="confirm-modal-title" style="font-weight:700;margin-bottom:var(--space-2);">
+          Are you sure?
+        </h5>
+        <p id="confirm-modal-body"
+          style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-4);">
+          This action cannot be undone.
+        </p>
+        <!-- Type-to-confirm for reset only -->
+        <div id="confirm-type-wrap" style="display:none;margin-bottom:var(--space-4);">
+          <label style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:6px;display:block;">
+            Type <strong>RESET</strong> to confirm
+          </label>
+          <input type="text" id="confirm-type-input" class="form-control"
+            placeholder="RESET" style="text-align:center;font-weight:700;letter-spacing:0.1em;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-danger" id="confirm-action-btn">
+          <i class="fa-solid fa-check"></i> Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     RESTORE CONFIRM MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="restore-confirm-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm Restore</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div style="
+          background:var(--color-warning-light);
+          border:1px solid var(--color-warning);
+          border-radius:var(--radius-md);
+          padding:var(--space-3) var(--space-4);
+          margin-bottom:var(--space-4);
+          display:flex;gap:var(--space-3);align-items:flex-start;
+        ">
+          <i class="fa-solid fa-triangle-exclamation" style="color:var(--color-warning);margin-top:2px;"></i>
+          <div style="font-size:var(--text-sm);color:var(--text-secondary);">
+            Restoring will <strong>overwrite</strong> your current products, sales, and settings
+            with the data from the backup file. This cannot be undone.
+          </div>
+        </div>
+        <div id="restore-summary" style="font-size:var(--text-sm);color:var(--text-secondary);"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-warning" id="confirm-restore-btn">
+          <i class="fa-solid fa-rotate-left"></i> Restore Backup
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="tf-toast-container" class="toast-container"></div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/js/storage.js"></script>
+<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/app.js"></script>
+
+<script>
+/**
+ * Settings Module
+ * ===============
+ * Sections:
+ *  1. Business Information (name, address, phone, email)
+ *  2. Tax & Currency (VAT toggle, VAT rate, currency)
+ *  3. App Preferences (low stock threshold, timezone)
+ *  4. Appearance (light/dark theme selector)
+ *  5. Data & Backup (storage stats, download backup, restore)
+ *  6. Danger Zone (clear sales, clear movements, full reset)
+ *  7. About (version, stack, credits)
+ */
+const SettingsPage = (() => {
+
+  // Bootstrap modal instances
+  let confirmModal, restoreConfirmModal;
+
+  // Pending confirm action callback
+  let pendingAction   = null;
+  let requiresTyping  = false;
+  let restorePayload  = null; // parsed backup JSON awaiting confirmation
+
+  // ── Init ─────────────────────────────────────────────────────────────────
+  function init() {
+    confirmModal        = new bootstrap.Modal(document.getElementById('confirm-modal'));
+    restoreConfirmModal = new bootstrap.Modal(document.getElementById('restore-confirm-modal'));
+
+    loadAllSettings();
+    updateThemeSelector();
+    updateStorageStats();
+    bindEvents();
+  }
+
+  // ── Load Settings into Form ───────────────────────────────────────────────
+  function loadAllSettings() {
+    const s = Storage.getSettings();
+
+    // Business info
+    _val('s-biz-name',    s.businessName    || '');
+    _val('s-biz-address', s.businessAddress || '');
+    _val('s-biz-phone',   s.businessPhone   || '');
+    _val('s-biz-email',   s.businessEmail   || '');
+
+    // Tax & currency
+    _val('s-currency',    s.currency   || 'NGN');
+    _val('s-vat-rate',    s.vatRate    ?? 7.5);
+    document.getElementById('s-vat-enabled').checked = s.vatEnabled !== false;
+    _set('current-vat-label', `${s.vatRate ?? 7.5}%`);
+
+    // Preferences
+    _val('s-low-stock', s.lowStockThreshold || 10);
+    _val('s-timezone',  s.timezone || 'Africa/Lagos');
+
+    // Toggle VAT rate row visibility
+    toggleVatRateRow(s.vatEnabled !== false);
+  }
+
+  // ── Save Handlers ─────────────────────────────────────────────────────────
+
+  function saveBusinessInfo() {
+    const name    = document.getElementById('s-biz-name').value.trim();
+    const address = document.getElementById('s-biz-address').value.trim();
+    const phone   = document.getElementById('s-biz-phone').value.trim();
+    const email   = document.getElementById('s-biz-email').value.trim();
+
+    if (!name) {
+      Utils.toastError('Name Required', 'Business name cannot be empty.');
+      document.getElementById('s-biz-name').focus();
+      return;
+    }
+
+    const current = Storage.getSettings();
+    Storage.saveSettings({
+      ...current,
+      businessName:    name,
+      businessAddress: address,
+      businessPhone:   phone,
+      businessEmail:   email,
+    });
+
+    Utils.toastSuccess('Business Info Saved', 'Your business profile has been updated.');
+  }
+
+  function saveTaxSettings() {
+    const vatEnabled = document.getElementById('s-vat-enabled').checked;
+    const vatRate    = parseFloat(document.getElementById('s-vat-rate').value) || 7.5;
+    const currency   = document.getElementById('s-currency').value;
+
+    if (vatRate < 0 || vatRate > 100) {
+      Utils.toastError('Invalid Rate', 'VAT rate must be between 0 and 100.');
+      return;
+    }
+
+    // Currency → symbol mapping
+    const symbols = { NGN: '₦', USD: '$', GBP: '£', EUR: '€', GHS: '₵' };
+
+    const current = Storage.getSettings();
+    Storage.saveSettings({
+      ...current,
+      vatEnabled,
+      vatRate,
+      currency,
+      currencySymbol: symbols[currency] || '₦',
+    });
+
+    _set('current-vat-label', `${vatRate}%`);
+    Utils.toastSuccess('Tax Settings Saved', `VAT: ${vatEnabled ? vatRate + '%' : 'Disabled'} · Currency: ${currency}`);
+  }
+
+  function savePreferences() {
+    const lowStock = parseInt(document.getElementById('s-low-stock').value, 10) || 10;
+    const timezone = document.getElementById('s-timezone').value;
+
+    if (lowStock < 1) {
+      Utils.toastError('Invalid Threshold', 'Low stock threshold must be at least 1.');
+      return;
+    }
+
+    const current = Storage.getSettings();
+    Storage.saveSettings({ ...current, lowStockThreshold: lowStock, timezone });
+    Utils.toastSuccess('Preferences Saved', 'Your preferences have been updated.');
+  }
+
+  // ── Theme ─────────────────────────────────────────────────────────────────
+  function setTheme(theme) {
+    Theme.set(theme);
+    updateThemeSelector();
+    Utils.toastSuccess(
+      theme === 'dark' ? 'Dark Mode On' : 'Light Mode On',
+      'Theme preference saved.'
+    );
+  }
+
+  function updateThemeSelector() {
+    const current = Theme.current();
+    document.getElementById('theme-light-opt')?.classList.toggle('active', current === 'light');
+    document.getElementById('theme-dark-opt')?.classList.toggle('active', current === 'dark');
+  }
+
+  // ── Storage Stats ─────────────────────────────────────────────────────────
+  function updateStorageStats() {
+    const products = Storage.getProducts().length;
+    const sales    = Storage.getSales().length;
+    const moves    = Storage.getStockMovements().length;
+    const alerts   = Storage.getAlerts().length;
+
+    _set('storage-products', products);
+    _set('storage-sales',    sales);
+    _set('storage-moves',    moves);
+    _set('storage-alerts',   alerts);
+
+    // Estimate storage used
+    try {
+      let totalBytes = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith('tf_')) {
+          totalBytes += (localStorage.getItem(key) || '').length * 2; // UTF-16
+        }
+      }
+      const kb    = (totalBytes / 1024).toFixed(1);
+      const pct   = Math.min(100, (totalBytes / (5 * 1024 * 1024)) * 100); // 5MB limit
+      _set('storage-used', `${kb} KB used of ~5 MB`);
+      const bar = document.getElementById('storage-bar');
+      if (bar) bar.style.width = `${pct}%`;
+    } catch (e) {
+      _set('storage-used', 'Could not calculate');
+    }
+  }
+  // ── Backup ────────────────────────────────────────────────────────────────
+  function downloadBackup() {
+    const json     = Storage.exportBackup();
+    const blob     = new Blob([json], { type: 'application/json' });
+    const url      = URL.createObjectURL(blob);
+    const a        = document.createElement('a');
+    const date     = new Date().toISOString().split('T')[0];
+
+    const bizName  = (Storage.getSettings().businessName || 'TradeFlow')
+      .toLowerCase().replace(/\s+/g, '-');
+
+    a.href     = url;
+    a.download = `tradeflow-backup-${bizName}-${date}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    Utils.toastSuccess('Backup Downloaded', 'Your data backup has been saved to your device.');
+  }
+
+  function copyBackupToClipboard() {
+    const json = Storage.exportBackup();
+    navigator.clipboard?.writeText(json).then(() => {
+      Utils.toastSuccess('Copied!', 'Backup JSON copied to clipboard.');
+    }).catch(() => {
+      Utils.toastError('Copy Failed', 'Could not copy to clipboard. Try Download instead.');
+    });
+  }
+
+  // ── Restore ───────────────────────────────────────────────────────────────
+  function handleRestoreFile(file) {
+    if (!file || !file.name.endsWith('.json')) {
+      Utils.toastError('Invalid File', 'Please select a .json backup file.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target.result);
+
+        // Validate backup structure
+        if (!parsed.version || !parsed.exportedAt) {
+          throw new Error('This does not appear to be a valid TradeFlow backup file.');
+        }
+
+        restorePayload = parsed;
+
+        // Show summary in confirm modal
+        const summary = document.getElementById('restore-summary');
+        if (summary) {
+          summary.innerHTML = `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);margin-top:var(--space-3);">
+              ${_summaryItem('Backup Version', parsed.version)}
+              ${_summaryItem('Exported At', Utils.formatDateTime(parsed.exportedAt))}
+              ${_summaryItem('Products', (parsed.products || []).length + ' products')}
+              ${_summaryItem('Sales Records', (parsed.sales || []).length + ' sales')}
+              ${_summaryItem('Stock Movements', (parsed.stockMoves || []).length + ' records')}
+              ${_summaryItem('Categories', (parsed.categories || []).length + ' categories')}
+            </div>`;
+        }
+
+        // Show preview in page
+        const preview = document.getElementById('restore-preview');
+        if (preview) {
+          preview.style.display = 'block';
+          preview.innerHTML = `
+            <div style="
+              background:var(--color-success-light);
+              border:1px solid var(--color-success);
+              border-radius:var(--radius-md);
+              padding:var(--space-3) var(--space-4);
+              display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);
+            ">
+              <div style="display:flex;align-items:center;gap:var(--space-3);">
+                <i class="fa-solid fa-file-code" style="color:var(--color-success);"></i>
+                <div>
+                  <div style="font-size:var(--text-sm);font-weight:600;">
+                    ${Utils.escapeHtml(file.name)}
+                  </div>
+                  <div style="font-size:var(--text-xs);color:var(--text-muted);">
+                    v${parsed.version} · ${(parsed.products || []).length} products · ${(parsed.sales || []).length} sales
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-warning btn-sm" onclick="SettingsPage.showRestoreConfirm()">
+                <i class="fa-solid fa-rotate-left"></i> Restore
+              </button>
+            </div>`;
+        }
+
+        Utils.toastInfo('File Loaded', 'Review the backup details and click Restore to proceed.');
+
+      } catch (err) {
+        Utils.toastError('Invalid Backup', err.message || 'Could not parse backup file.');
+        restorePayload = null;
+        const preview = document.getElementById('restore-preview');
+        if (preview) preview.style.display = 'none';
+      }
+    };
+
+    reader.readAsText(file);
+  }
+
+  function showRestoreConfirm() {
+    if (!restorePayload) return;
+    restoreConfirmModal.show();
+  }
+
+  function executeRestore() {
+    if (!restorePayload) return;
+
+    const result = Storage.importBackup(JSON.stringify(restorePayload));
+
+    if (result.success) {
+      restoreConfirmModal.hide();
+      Utils.toastSuccess('Restore Complete', 'Your data has been successfully restored from backup.');
+      restorePayload = null;
+
+      // Reset UI
+      const preview = document.getElementById('restore-preview');
+      if (preview) preview.style.display = 'none';
+      document.getElementById('restore-file-input').value = '';
+
+      updateStorageStats();
+    } else {
+      Utils.toastError('Restore Failed', result.error || 'An unknown error occurred.');
+    }
+  }
+
+  // ── Danger Zone ───────────────────────────────────────────────────────────
+  function showConfirm({ title, body, action, requireType = false }) {
+    _set('confirm-modal-title', title);
+    _set('confirm-modal-body',  body);
+
+    const typeWrap = document.getElementById('confirm-type-wrap');
+    const typeInput = document.getElementById('confirm-type-input');
+    if (typeWrap) typeWrap.style.display = requireType ? 'block' : 'none';
+    if (typeInput) typeInput.value = '';
+
+    requiresTyping = requireType;
+    pendingAction  = action;
+    confirmModal.show();
+  }
+
+  function executeConfirmedAction() {
+    if (requiresTyping) {
+      const val = document.getElementById('confirm-type-input')?.value?.trim();
+      if (val !== 'RESET') {
+        Utils.toastError('Type Required', 'Please type RESET to confirm this action.');
+        return;
+      }
+    }
+
+    if (typeof pendingAction === 'function') pendingAction();
+    confirmModal.hide();
+    pendingAction  = null;
+    requiresTyping = false;
+  }
+
+  function clearSalesHistory() {
+    Storage.setSales([]);
+    Storage.set('receipt_seq', 1000);
+    Utils.toastSuccess('Sales Cleared', 'All sales history has been deleted.');
+    updateStorageStats();
+  }
+
+  function clearStockMovements() {
+    Storage.setStockMovements([]);
+    Utils.toastSuccess('Movements Cleared', 'Stock movement history has been cleared.');
+    updateStorageStats();
+  }
+
+  function resetSystem() {
+    Storage.clearAll();
+    Utils.toastSuccess('System Reset', 'All data has been wiped. Redirecting to login...');
+    setTimeout(() => { window.location.href = '../index.html'; }, 1800);
+  }
+
+  // ── VAT Row Toggle ────────────────────────────────────────────────────────
+  function toggleVatRateRow(show) {
+    const row = document.getElementById('vat-rate-row');
+    if (row) row.style.display = show ? '' : 'none';
+  }
+
+  // ── Settings Nav Highlight ────────────────────────────────────────────────
+  function initScrollSpy() {
+    const sections = document.querySelectorAll('.settings-section, .danger-zone');
+    const navItems = document.querySelectorAll('.settings-nav-item');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          navItems.forEach((item) => {
+            item.classList.toggle('active', item.getAttribute('href') === `#${id}`);
+          });
+        }
+      });
+    }, {
+      rootMargin: '-20% 0px -70% 0px',
+      threshold:  0,
+    });
+
+    sections.forEach((s) => observer.observe(s));
+  }
+  // ── Event Binding ─────────────────────────────────────────────────────────
+  function bindEvents() {
+    // Save buttons
+    document.getElementById('save-business-btn')?.addEventListener('click', saveBusinessInfo);
+    document.getElementById('save-tax-btn')?.addEventListener('click', saveTaxSettings);
+    document.getElementById('save-prefs-btn')?.addEventListener('click', savePreferences);
+
+    // VAT toggle → show/hide rate row
+    document.getElementById('s-vat-enabled')?.addEventListener('change', (e) => {
+      toggleVatRateRow(e.target.checked);
+    });
+
+    // VAT rate live update label
+    document.getElementById('s-vat-rate')?.addEventListener('input', (e) => {
+      _set('current-vat-label', `${e.target.value || 0}%`);
+    });
+
+    // Backup buttons
+    document.getElementById('backup-btn')?.addEventListener('click', downloadBackup);
+    document.getElementById('copy-backup-btn')?.addEventListener('click', copyBackupToClipboard);
+
+    // Restore file input
+    document.getElementById('restore-file-input')?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) handleRestoreFile(file);
+    });
+
+    // Drag-and-drop restore
+    const dropArea = document.getElementById('restore-drop-area');
+    if (dropArea) {
+      dropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropArea.classList.add('drag-over');
+      });
+      dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
+      dropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropArea.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) handleRestoreFile(file);
+      });
+    }
+
+    // Confirm restore button
+    document.getElementById('confirm-restore-btn')?.addEventListener('click', executeRestore);
+
+    // Danger zone buttons
+    document.getElementById('clear-sales-btn')?.addEventListener('click', () => {
+      showConfirm({
+        title:  'Clear All Sales?',
+        body:   'This will permanently delete all sales records and reset the receipt counter. Products and inventory will not be affected.',
+        action: clearSalesHistory,
+      });
+    });
+
+    document.getElementById('clear-moves-btn')?.addEventListener('click', () => {
+      showConfirm({
+        title:  'Clear Movement History?',
+        body:   'This will permanently delete the entire stock movement log. Current stock levels will remain unchanged.',
+        action: clearStockMovements,
+      });
+    });
+
+    document.getElementById('reset-system-btn')?.addEventListener('click', () => {
+      showConfirm({
+        title:       'Reset Entire System?',
+        body:        'This will permanently delete ALL data including products, sales, settings, and history. You will be redirected to the login page. This cannot be undone. Please download a backup first.',
+        action:      resetSystem,
+        requireType: true,
+      });
+    });
+
+    // Confirm modal action button
+    document.getElementById('confirm-action-btn')?.addEventListener('click', executeConfirmedAction);
+
+    // Settings nav smooth scroll
+    document.querySelectorAll('.settings-nav-item').forEach((item) => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.querySelector(item.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Scroll spy for settings nav highlight
+    initScrollSpy();
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function _val(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  }
+
+  function _set(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  function _summaryItem(label, value) {
+    return `
+      <div style="background:var(--bg-surface-2);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);">
+        <div style="font-size:var(--text-xs);color:var(--text-muted);">${label}</div>
+        <div style="font-size:var(--text-sm);font-weight:600;">${Utils.escapeHtml(String(value))}</div>
+      </div>`;
+  }
+
+  // Public API
+  return { init, setTheme, showRestoreConfirm };
+
+})();
+
+document.addEventListener('DOMContentLoaded', () => {
+  App.init({
+    pageTitle: 'Settings',
+    onReady:   () => SettingsPage.init(),
+  });
+});
+</script>
+</body>
+</html>

@@ -632,7 +632,7 @@ const Storage = (() => {
       timezone:        'Africa/Lagos',
     });
     
-    // Seed some sample sales history (last 7 days)
+     // Seed some sample sales history (last 7 days)
     seedSampleSales(products);
 
     // Mark as seeded
@@ -733,7 +733,7 @@ const Storage = (() => {
     getTheme, saveTheme,
 
     // Stock movements
-    getStockMovements, addStockMovement, getMovementsForProduct,
+    getStockMovements, setStockMovements, addStockMovement, getMovementsForProduct,
 
     // Alerts
     getAlerts, addAlert, markAlertRead, getUnreadAlertCount,

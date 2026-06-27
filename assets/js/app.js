@@ -157,14 +157,19 @@ const App = (() => {
     const titleEl = document.getElementById('topbar-title');
     if (titleEl) titleEl.textContent = pageTitle;
 
-    // Set avatar initials
+    // Set avatar initials (both topbar and any secondary avatar)
     const avatarEl = document.getElementById('topbar-avatar');
     if (avatarEl) avatarEl.textContent = Utils.getInitials(session.name);
 
-    // Set user name in dropdown
+    // Set user name in topbar button (visible on md+ screens)
     const nameEl = document.getElementById('topbar-username');
     if (nameEl) nameEl.textContent = session.name;
 
+    // Set user name in dropdown menu (always visible)
+    const nameDdEl = document.getElementById('topbar-username-dd');
+    if (nameDdEl) nameDdEl.textContent = session.name;
+
+    // Set role in dropdown (topbar-userrole is inside the dropdown)
     const roleEl = document.getElementById('topbar-userrole');
     if (roleEl) roleEl.textContent = Utils.capitalise(session.role);
   }
