@@ -1,772 +1,2156 @@
 <!DOCTYPE html>
 <html lang="en-NG" data-theme="light">
+
+<!--
+=======================================================================
+  Inventory & Sales Management Platform
+  Authentication Page — index.html
+  
+  Self-contained: all CSS and JavaScript are internal to this file.
+  No external JS or CSS files are used on this page.
+  
+  External CDNs loaded:
+    - Bootstrap 5.3.2 (CSS + JS)
+    - Bootstrap Icons 1.11
+    - Google Fonts — Inter
+  
+  LocalStorage keys used (namespace: tf_):
+    tf_users     → array of user objects
+    tf_session   → current session object
+    tf_settings  → business settings (businessName, etc.)
+    tf_theme     → 'light' | 'dark'
+    tf_seeded    → boolean flag (sample data already seeded)
+    remember_email → saved email for Remember Me
+  
+  Flow:
+    1. Page loads → check tf_users in LocalStorage
+    2. No admin found → show SETUP SCREEN
+    3. Admin exists  → show LOGIN SCREEN
+    4. After setup   → auto-redirect to login after 2 seconds
+    5. After login   → redirect to pages/dashboard.html
+=======================================================================
+-->
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="TradeFlow — Data-Driven Inventory and Sales Management Platform for Nigerian SMEs">
-  <meta name="theme-color" content="#2563EB">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Inventory and Sales Management Platform — Final Year Project" />
+  <title>Inventory &amp; Sales Management Platform</title>
 
-  <title>Sign In — TradeFlow</title>
-
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
-
-  <!-- Bootstrap 5 -->
+  <!-- Bootstrap 5.3.2 CSS -->
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
     crossorigin="anonymous"
-  >
+  />
 
-  <!-- Font Awesome 6 -->
+  <!-- Bootstrap Icons 1.11 -->
   <link
     rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
     crossorigin="anonymous"
-  >
+  />
 
   <!-- Google Fonts — Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet"
-  >
+  />
 
-  <!-- TradeFlow Theme -->
-  <link rel="stylesheet" href="assets/css/theme.css">
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json" />
 
   <style>
-    /*
-     * Login-page only styles — supplements theme.css
-     * Kept here rather than in theme.css for clarity
-     */
+    /* =====================================================================
+       INTERNAL CSS — index.html only
+       
+       Design system mirrors the rest of the application.
+       All colour tokens are defined here as CSS custom properties,
+       matching the values in assets/css/theme.css exactly.
+       Light and dark mode are driven by [data-theme] on <html>.
+    ===================================================================== */
 
-    /* Subtle animated grid pattern on the left panel */
-    .login-panel-left .panel-grid {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
+    /* -------------------------------------------------------------------
+       1. CSS CUSTOM PROPERTIES (Design Tokens)
+          Light mode defaults. Dark mode overrides below.
+    ------------------------------------------------------------------- */
+    :root {
+      /* Brand */
+      --c-primary:       #2563EB;
+      --c-primary-hover: #1d4ed8;
+      --c-primary-light: #dbeafe;
+      --c-primary-rgb:   37, 99, 235;
+
+      /* Semantic */
+      --c-success:       #10b981;
+      --c-success-light: #d1fae5;
+      --c-danger:        #ef4444;
+      --c-danger-light:  #fee2e2;
+      --c-warning:       #f59e0b;
+
+      /* Backgrounds */
+      --bg-page:         #f0f4f8;
+      --bg-card:         #ffffff;
+      --bg-muted:        #f8fafc;
+      --bg-input:        #ffffff;
+
+      /* Text */
+      --tx-primary:      #0f172a;
+      --tx-secondary:    #475569;
+      --tx-muted:        #94a3b8;
+      --tx-inverse:      #ffffff;
+
+      /* Borders */
+      --bd-color:        #e2e8f0;
+
+      /* Shadows */
+      --sh-card:         0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.04);
+      --sh-card-hover:   0 10px 15px rgba(0,0,0,0.08), 0 4px 6px rgba(0,0,0,0.04);
+
+      /* Radii */
+      --r-sm:  6px;
+      --r-md:  10px;
+      --r-lg:  14px;
+      --r-xl:  20px;
+      --r-full: 9999px;
+
+      /* Typography */
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+      /* Transitions */
+      --tr-fast: all 0.15s ease;
+      --tr-base: all 0.25s ease;
     }
 
-    /* Animated floating stat cards on the left panel (decorative) */
-    .panel-stat-cards {
-      position: relative;
-      z-index: 2;
-      margin-top: var(--space-10);
+    /* Dark mode token overrides */
+    [data-theme="dark"] {
+      --bg-page:         #0a0f1e;
+      --bg-card:         #111827;
+      --bg-muted:        #1a2236;
+      --bg-input:        #1a2236;
+
+      --tx-primary:      #f1f5f9;
+      --tx-secondary:    #94a3b8;
+      --tx-muted:        #64748b;
+
+      --bd-color:        #1e293b;
+
+      --sh-card:         0 4px 6px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.3);
+      --sh-card-hover:   0 10px 15px rgba(0,0,0,0.5), 0 4px 6px rgba(0,0,0,0.3);
+
+      --c-primary-light: rgba(37, 99, 235, 0.15);
+      --c-success-light: rgba(16, 185, 129, 0.15);
+      --c-danger-light:  rgba(239, 68, 68, 0.15);
     }
 
-    .panel-stat-card {
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: var(--radius-lg);
-      padding: var(--space-4) var(--space-5);
-      backdrop-filter: blur(10px);
+    /* -------------------------------------------------------------------
+       2. BASE RESET
+    ------------------------------------------------------------------- */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--tx-primary);
+      background-color: var(--bg-page);
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* -------------------------------------------------------------------
+       3. PAGE LAYOUT
+          Full-height centred column. Card never overflows on any device.
+    ------------------------------------------------------------------- */
+    .auth-page {
+      min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: var(--space-4);
-      margin-bottom: var(--space-3);
-      animation: float 6s ease-in-out infinite;
+      justify-content: center;
+      padding: 2rem 1rem;
     }
 
-    .panel-stat-card:nth-child(2) { animation-delay: 2s; }
-    .panel-stat-card:nth-child(3) { animation-delay: 4s; }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50%       { transform: translateY(-6px); }
+    .auth-wrapper {
+      width: 100%;
+      max-width: 460px;
     }
 
-    .panel-stat-icon {
-      width: 38px;
-      height: 38px;
-      border-radius: var(--radius-sm);
+    /* Smooth entrance */
+    .auth-wrapper {
+      animation: slideUp 0.4s ease both;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* -------------------------------------------------------------------
+       4. BRAND HEADER
+          Logo icon, product name, version badge, description.
+    ------------------------------------------------------------------- */
+    .brand {
+      text-align: center;
+      margin-bottom: 1.75rem;
+    }
+
+    .brand-icon {
+      width: 58px;
+      height: 58px;
+      background: var(--c-primary);
+      color: var(--tx-inverse);
+      border-radius: var(--r-lg);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 0.9rem;
+      box-shadow: 0 6px 20px rgba(var(--c-primary-rgb), 0.35);
+    }
+
+    .brand-name {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--tx-primary);
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+      margin-bottom: 0.4rem;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--c-primary-light);
+      color: var(--c-primary);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      padding: 3px 10px;
+      border-radius: var(--r-full);
+      margin-bottom: 0.6rem;
+    }
+
+    .brand-desc {
+      font-size: 0.77rem;
+      color: var(--tx-muted);
+      line-height: 1.65;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    /* -------------------------------------------------------------------
+       5. CARD  (Bootstrap card + custom tokens)
+    ------------------------------------------------------------------- */
+    .auth-card {
+      background: var(--bg-card);
+      border: 1px solid var(--bd-color);
+      border-radius: var(--r-xl);
+      box-shadow: var(--sh-card);
+      transition: var(--tr-base);
+      overflow: hidden;
+    }
+
+    .auth-card .card-body {
+      padding: 2rem 1.75rem;
+    }
+
+    /* -------------------------------------------------------------------
+       6. CARD HEADING
+    ------------------------------------------------------------------- */
+    .card-heading {
+      margin-bottom: 1.4rem;
+    }
+
+    .card-heading h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--tx-primary);
+      margin-bottom: 0.15rem;
+    }
+
+    .card-heading p {
+      font-size: 0.78rem;
+      color: var(--tx-muted);
+      margin: 0;
+    }
+
+    /* -------------------------------------------------------------------
+       7. FORM ELEMENTS
+          Labels, inputs, input-icon groups, password toggle.
+    ------------------------------------------------------------------- */
+
+    /* Label */
+    .f-label {
+      display: block;
+      font-size: 0.79rem;
+      font-weight: 600;
+      color: var(--tx-secondary);
+      margin-bottom: 0.35rem;
+    }
+
+    /* Override Bootstrap form-control colours with our tokens */
+    .form-control {
+      background-color: var(--bg-input);
+      border-color: var(--bd-color);
+      color: var(--tx-primary);
+      border-radius: var(--r-md);
+      font-size: 0.875rem;
+      padding: 0.65rem 0.9rem;
+      transition: var(--tr-fast);
+      font-family: var(--font);
+    }
+
+    .form-control::placeholder {
+      color: var(--tx-muted);
+    }
+
+    .form-control:focus {
+      background-color: var(--bg-input);
+      border-color: var(--c-primary);
+      box-shadow: 0 0 0 3px rgba(var(--c-primary-rgb), 0.15);
+      color: var(--tx-primary);
+    }
+
+    /* Icon-prefix input wrapper */
+    .input-group-auth {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+
+    .input-group-auth .input-icon {
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--tx-muted);
+      font-size: 0.9rem;
+      pointer-events: none;
+      z-index: 5;
+      transition: color 0.15s ease;
+    }
+
+    .input-group-auth:focus-within .input-icon {
+      color: var(--c-primary);
+    }
+
+    .input-group-auth .form-control {
+      padding-left: 2.4rem;
+    }
+
+    /* Right-side toggle (show/hide password) */
+    .pw-toggle {
+      position: absolute;
+      right: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--tx-muted);
+      cursor: pointer;
+      padding: 2px 4px;
+      font-size: 0.88rem;
+      line-height: 1;
+      z-index: 5;
+      transition: color 0.15s ease;
+    }
+
+    .pw-toggle:hover { color: var(--tx-primary); }
+
+    /* Field-level error text */
+    .field-error {
+      display: none;
+      font-size: 0.72rem;
+      color: var(--c-danger);
+      margin-top: 0.28rem;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .field-error.show { display: flex; }
+
+    /* -------------------------------------------------------------------
+       8. PASSWORD STRENGTH BAR
+    ------------------------------------------------------------------- */
+    .pw-strength {
+      margin-top: 0.4rem;
+      display: none;
+    }
+
+    .pw-strength.show { display: block; }
+
+    .pw-strength-track {
+      height: 4px;
+      background: var(--bd-color);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .pw-strength-fill {
+      height: 100%;
+      border-radius: 2px;
+      width: 0;
+      transition: width 0.35s ease, background-color 0.35s ease;
+    }
+
+    .pw-strength-text {
+      font-size: 0.68rem;
+      font-weight: 600;
+      margin-top: 0.22rem;
+    }
+
+    /* -------------------------------------------------------------------
+       9. STEP PROGRESS DOTS  (setup wizard)
+    ------------------------------------------------------------------- */
+    .step-dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 1.4rem;
+    }
+
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--bd-color);
+      transition: all 0.28s ease;
+    }
+
+    .step-dot.active {
+      width: 22px;
+      border-radius: 4px;
+      background: var(--c-primary);
+    }
+
+    .step-dot.done {
+      background: var(--c-success);
+    }
+
+    /* -------------------------------------------------------------------
+       10. PRIMARY BUTTON
+    ------------------------------------------------------------------- */
+    .btn-auth {
+      width: 100%;
+      padding: 0.72rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      border-radius: var(--r-md);
+      border: none;
+      background: var(--c-primary);
+      color: var(--tx-inverse);
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1rem;
+      gap: 0.45rem;
+      font-family: var(--font);
+      box-shadow: 0 4px 12px rgba(var(--c-primary-rgb), 0.3);
+      transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-auth:hover:not(:disabled) {
+      background: var(--c-primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(var(--c-primary-rgb), 0.42);
+    }
+
+    .btn-auth:active:not(:disabled) { transform: translateY(0); }
+
+    .btn-auth:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Loading spinner inside the button */
+    .btn-auth .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
       flex-shrink: 0;
     }
 
-    .panel-stat-icon.blue   { background: rgba(37,99,235,0.3);   color: #93c5fd; }
-    .panel-stat-icon.green  { background: rgba(16,185,129,0.3);  color: #6ee7b7; }
-    .panel-stat-icon.yellow { background: rgba(245,158,11,0.3);  color: #fcd34d; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    .panel-stat-value {
-      font-size: var(--text-lg);
-      font-weight: 700;
-      color: white;
-      line-height: 1.2;
+    .btn-auth.loading .spinner    { display: block; }
+    .btn-auth.loading .btn-text   { opacity: 0.75; }
+
+    /* -------------------------------------------------------------------
+       11. SECONDARY BUTTON  (back, forgot, etc.)
+    ------------------------------------------------------------------- */
+    .btn-secondary-auth {
+      background: var(--bg-muted);
+      color: var(--tx-secondary);
+      border: 1px solid var(--bd-color);
+      box-shadow: none;
     }
 
-    .panel-stat-label {
-      font-size: var(--text-xs);
-      color: rgba(255,255,255,0.5);
+    .btn-secondary-auth:hover:not(:disabled) {
+      background: var(--bd-color);
+      box-shadow: none;
     }
 
-    /* Role selector tabs */
-    .role-tabs {
-      display: flex;
-      gap: var(--space-2);
-      background: var(--bg-surface-2);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 4px;
-      margin-bottom: var(--space-5);
-    }
-
-    .role-tab {
-      flex: 1;
-      padding: var(--space-2) var(--space-3);
+    /* Text-only link button */
+    .btn-link-auth {
+      background: none;
       border: none;
-      background: transparent;
-      color: var(--text-muted);
-      border-radius: var(--radius-sm);
+      padding: 0;
+      color: var(--c-primary);
+      font-size: 0.79rem;
+      font-family: var(--font);
       cursor: pointer;
-      font-size: var(--text-sm);
-      font-weight: 500;
-      font-family: var(--font-sans);
-      transition: var(--transition-fast);
+      text-decoration: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .btn-link-auth:hover { opacity: 0.75; text-decoration: underline; }
+
+    /* -------------------------------------------------------------------
+       12. OPTIONS ROW  (Remember Me + Forgot Password)
+    ------------------------------------------------------------------- */
+    .options-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.1rem;
+    }
+
+    .check-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.79rem;
+      color: var(--tx-secondary);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .check-wrap input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--c-primary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* -------------------------------------------------------------------
+       13. ALERT BANNERS  (Bootstrap overrides)
+    ------------------------------------------------------------------- */
+    .alert {
+      border-radius: var(--r-md);
+      font-size: 0.8rem;
+      padding: 0.65rem 0.9rem;
+    }
+
+    .alert-danger {
+      background: var(--c-danger-light);
+      border-color: var(--c-danger);
+      color: var(--c-danger);
+    }
+
+    .alert-success {
+      background: var(--c-success-light);
+      border-color: var(--c-success);
+      color: var(--c-success);
+    }
+
+    /* -------------------------------------------------------------------
+       14. "ADMIN CONFIGURED" NOTICE
+    ------------------------------------------------------------------- */
+    .admin-notice {
+      margin-top: 1.1rem;
+      padding: 0.75rem 0.9rem;
+      background: var(--bg-muted);
+      border: 1px solid var(--bd-color);
+      border-radius: var(--r-md);
+      font-size: 0.76rem;
+      color: var(--tx-muted);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .admin-notice strong { color: var(--tx-secondary); }
+
+    /* -------------------------------------------------------------------
+       15. FORGOT PASSWORD PANEL
+    ------------------------------------------------------------------- */
+    .forgot-panel {
+      background: var(--bg-muted);
+      border: 1px solid var(--bd-color);
+      border-radius: var(--r-md);
+      padding: 1.25rem;
+      text-align: center;
+      margin-bottom: 1.1rem;
+    }
+
+    .forgot-panel-emoji { font-size: 2rem; margin-bottom: 0.5rem; }
+
+    .forgot-panel p {
+      font-size: 0.79rem;
+      color: var(--tx-secondary);
+      line-height: 1.65;
+      margin: 0;
+    }
+
+    /* -------------------------------------------------------------------
+       16. CARD SHAKE  (failed login feedback)
+    ------------------------------------------------------------------- */
+    @keyframes cardShake {
+      0%,  100% { transform: translateX(0); }
+      20%        { transform: translateX(-6px); }
+      40%        { transform: translateX(6px); }
+      60%        { transform: translateX(-4px); }
+      80%        { transform: translateX(4px); }
+    }
+
+    .shake { animation: cardShake 0.42s ease; }
+
+    /* -------------------------------------------------------------------
+       17. THEME TOGGLE  (fixed top-right corner)
+    ------------------------------------------------------------------- */
+    .theme-btn {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 999;
+      width: 38px;
+      height: 38px;
+      border-radius: var(--r-md);
+      border: 1px solid var(--bd-color);
+      background: var(--bg-card);
+      color: var(--tx-secondary);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: var(--space-2);
+      cursor: pointer;
+      font-size: 0.9rem;
+      box-shadow: var(--sh-card);
+      transition: var(--tr-fast);
     }
 
-    .role-tab:hover { color: var(--text-primary); }
-
-    .role-tab.active {
-      background: var(--bg-surface);
-      color: var(--text-primary);
-      box-shadow: var(--shadow-sm);
+    .theme-btn:hover {
+      color: var(--c-primary);
+      border-color: var(--c-primary);
     }
 
-    /* Error state on form controls */
-    .form-control.is-invalid {
-      border-color: var(--color-danger);
-    }
-    .form-control.is-invalid:focus {
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
-    }
-
-    /* Login page theme toggle — top-right corner */
-    .login-theme-btn {
-      position: fixed;
-      top: var(--space-5);
-      right: var(--space-5);
-      z-index: 100;
-    }
-
-    /* Divider with text */
-    .divider-text {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      color: var(--text-muted);
-      font-size: var(--text-xs);
-    }
-    .divider-text::before,
-    .divider-text::after {
-      content: '';
-      flex: 1;
+    /* -------------------------------------------------------------------
+       18. DIVIDER
+    ------------------------------------------------------------------- */
+    .auth-divider {
       height: 1px;
-      background: var(--border-color);
+      background: var(--bd-color);
+      margin: 0 0 1.4rem;
+    }
+
+    /* -------------------------------------------------------------------
+       19. FOOTER
+    ------------------------------------------------------------------- */
+    .auth-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.68rem;
+      color: var(--tx-muted);
+      line-height: 1.9;
+    }
+
+    .auth-footer strong { color: var(--tx-secondary); }
+
+    /* -------------------------------------------------------------------
+       20. RESPONSIVE
+    ------------------------------------------------------------------- */
+    @media (max-width: 480px) {
+      .auth-card .card-body { padding: 1.6rem 1.25rem; }
+      .brand-name           { font-size: 1rem; }
+      .auth-page            { padding: 1.25rem 0.75rem; }
+    }
+
+    @media (max-width: 360px) {
+      .auth-card .card-body { padding: 1.3rem 1rem; }
+      .brand-name           { font-size: 0.95rem; }
     }
   </style>
 </head>
 
 <body>
 
-  <!-- ── Theme Toggle (fixed, top-right) ────────────────────────────────────── -->
-  <div class="login-theme-btn">
-    <button class="theme-toggle" aria-label="Toggle dark mode">
-      <i class="fa-solid fa-moon"></i>
-    </button>
-  </div>
+  <!-- =====================================================================
+       THEME TOGGLE BUTTON
+       Fixed top-right. Switches between light and dark mode.
+       Icon updates to match current theme.
+  ===================================================================== -->
+  <button class="theme-btn" id="themeBtn" aria-label="Toggle dark mode">
+    <i class="bi bi-moon-fill" id="themeIcon"></i>
+  </button>
 
-  <!-- ── Login Layout ──────────────────────────────────────────────────────── -->
-  <main class="login-page" role="main">
 
-    <!-- Left Panel — Branding & Value Proposition -->
-    <aside class="login-panel-left" aria-hidden="true">
-      <!-- Grid background -->
-      <div class="panel-grid"></div>
+  <!-- =====================================================================
+       PAGE ROOT
+  ===================================================================== -->
+  <div class="auth-page">
+    <div class="auth-wrapper">
 
-      <!-- Brand logo -->
-      <div class="login-brand" style="position:relative;z-index:2;">
-        <div class="login-brand-logo">
-          <i class="fa-solid fa-bolt"></i>
+      <!-- Brand Header -->
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="bi bi-lightning-charge-fill"></i>
         </div>
-        <span class="login-brand-name">TradeFlow</span>
-      </div>
-
-      <!-- Main copy -->
-      <div class="login-panel-content">
-        <h1 class="login-panel-heading">
-          Run your business<br>with <span>precision.</span>
-        </h1>
-        <p class="login-panel-desc">
-          A complete inventory and sales management platform built
-          for Nigerian retail businesses. Real-time insights,
-          effortless point of sale, and smart stock alerts — all in one place.
+        <div class="brand-name">Inventory &amp; Sales Management Platform</div>
+        <div class="brand-badge">
+          <i class="bi bi-circle-fill" style="font-size: 0.38rem;"></i>
+          Prototype &nbsp;Version 1.0
+        </div>
+        <p class="brand-desc">
+          A web-based inventory and sales management platform developed
+          as a Final Year Project for Nigerian Retail SMEs.
         </p>
-
-        <!-- Feature highlights -->
-        <div class="login-features">
-          <div class="login-feature-item">
-            <div class="login-feature-icon"><i class="fa-solid fa-bolt"></i></div>
-            Fast Point of Sale with automatic VAT & receipts
-          </div>
-          <div class="login-feature-item">
-            <div class="login-feature-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
-            Real-time inventory tracking with low-stock alerts
-          </div>
-          <div class="login-feature-item">
-            <div class="login-feature-icon"><i class="fa-solid fa-chart-line"></i></div>
-            Dashboard insights and detailed sales reports
-          </div>
-          <div class="login-feature-item">
-            <div class="login-feature-icon"><i class="fa-solid fa-wifi"></i></div>
-            Works offline — Progressive Web App (PWA)
-          </div>
-        </div>
-
-        <!-- Decorative live stats (sample data) -->
-        <div class="panel-stat-cards">
-          <div class="panel-stat-card">
-            <div class="panel-stat-icon blue"><i class="fa-solid fa-naira-sign"></i></div>
-            <div>
-              <div class="panel-stat-value" id="panel-revenue">₦0</div>
-              <div class="panel-stat-label">Today's Revenue</div>
-            </div>
-          </div>
-          <div class="panel-stat-card">
-            <div class="panel-stat-icon green"><i class="fa-solid fa-receipt"></i></div>
-            <div>
-              <div class="panel-stat-value" id="panel-sales">0</div>
-              <div class="panel-stat-label">Sales Today</div>
-            </div>
-          </div>
-          <div class="panel-stat-card">
-            <div class="panel-stat-icon yellow"><i class="fa-solid fa-boxes-stacked"></i></div>
-            <div>
-              <div class="panel-stat-value" id="panel-products">0</div>
-              <div class="panel-stat-label">Products in Stock</div>
-            </div>
-          </div>
-        </div>
       </div>
+
+
+      <!-- =================================================================
+           SCREEN A — ADMINISTRATOR SETUP
+           
+           Displayed ONLY on first launch when no admin exists.
+           Two-step wizard:
+             Step 1 → Business Name + Administrator Name
+             Step 2 → Email + Password + Confirm Password
+           
+           On success: saves to LocalStorage, shows success alert,
+           auto-redirects to login after 2 seconds.
+      ================================================================= -->
+      <div id="screenSetup" style="display: none;">
+        <div class="auth-card">
+          <div class="card-body">
+
+            <!-- Step progress dots -->
+            <div class="step-dots">
+              <div class="step-dot active" id="dotA"></div>
+              <div class="step-dot"        id="dotB"></div>
+            </div>
+
+            <!-- Dynamic heading (updates between steps) -->
+            <div class="card-heading">
+              <h2 id="setupHeading">Welcome &mdash; Set up your account</h2>
+              <p id="setupSubheading">
+                No administrator account found. Create one to get started.
+              </p>
+            </div>
+
+            <div class="auth-divider"></div>
+
+            <!-- Setup form-level alerts -->
+            <div class="alert alert-danger d-flex align-items-start gap-2 mb-3"
+                 id="setupAlertError" style="display: none !important;">
+              <i class="bi bi-x-circle-fill flex-shrink-0 mt-1"></i>
+              <span id="setupAlertErrorText"></span>
+            </div>
+
+            <div class="alert alert-success d-flex align-items-start gap-2 mb-3"
+                 id="setupAlertSuccess" style="display: none !important;">
+              <i class="bi bi-check-circle-fill flex-shrink-0 mt-1"></i>
+              <span id="setupAlertSuccessText"></span>
+            </div>
+
+            <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                 STEP 1 — Business details
+            - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+            <div id="stepOne">
+
+              <!-- Business Name -->
+              <div class="mb-3">
+                <label class="f-label" for="bizName">
+                  Business Name <span class="text-danger">*</span>
+                </label>
+                <div class="input-group-auth">
+                  <i class="bi bi-building input-icon"></i>
+                  <input
+                    type="text"
+                    id="bizName"
+                    class="form-control"
+                    placeholder="e.g. Adekunle General Stores"
+                    autocomplete="organization"
+                    maxlength="80"
+                  />
+                </div>
+                <div class="field-error" id="errBizName">
+                  <i class="bi bi-exclamation-circle-fill"></i>
+                  <span></span>
+                </div>
+              </div>
+
+              <!-- Administrator Full Name -->
+              <div class="mb-3">
+                <label class="f-label" for="adminName">
+                  Administrator Full Name <span class="text-danger">*</span>
+                </label>
+                <div class="input-group-auth">
+                  <i class="bi bi-person input-icon"></i>
+                  <input
+                    type="text"
+                    id="adminName"
+                    class="form-control"
+                    placeholder="Your full name"
+                    autocomplete="name"
+                    maxlength="80"
+                  />
+                </div>
+                <div class="field-error" id="errAdminName">
+                  <i class="bi bi-exclamation-circle-fill"></i>
+                  <span></span>
+                </div>
+              </div>
+
+              <button class="btn-auth" id="btnStepOneNext" type="button">
+                <div class="spinner"></div>
+                <span class="btn-text">
+                  Continue &nbsp;<i class="bi bi-arrow-right"></i>
+                </span>
+              </button>
+
+            </div><!-- /stepOne -->
+
+
+            <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                 STEP 2 — Credentials
+            - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+            <div id="stepTwo" style="display: none;">
+
+              <!-- Email Address -->
+              <div class="mb-3">
+                <label class="f-label" for="setupEmail">
+                  Email Address <span class="text-danger">*</span>
+                </label>
+                <div class="input-group-auth">
+                  <i class="bi bi-envelope input-icon"></i>
+                  <input
+                    type="email"
+                    id="setupEmail"
+                    class="form-control"
+                    placeholder="admin@yourbusiness.com"
+                    autocomplete="email"
+                    inputmode="email"
+                    maxlength="100"
+                  />
+                </div>
+                <div class="field-error" id="errSetupEmail">
+                  <i class="bi bi-exclamation-circle-fill"></i>
+                  <span></span>
+                </div>
+              </div>
+
+              <!-- Password -->
+              <div class="mb-3">
+                <label class="f-label" for="setupPw">
+                  Password <span class="text-danger">*</span>
+                </label>
+                <div class="input-group-auth">
+                  <i class="bi bi-lock input-icon"></i>
+                  <input
+                    type="password"
+                    id="setupPw"
+                    class="form-control"
+                    placeholder="Minimum 8 characters"
+                    autocomplete="new-password"
+                    style="padding-right: 2.6rem;"
+                    maxlength="64"
+                  />
+                  <button type="button" class="pw-toggle" id="toggleSetupPw" tabindex="-1">
+                    <i class="bi bi-eye" id="iconSetupPw"></i>
+                  </button>
+                </div>
+                <!-- Password strength bar -->
+                <div class="pw-strength" id="pwStrengthWrap">
+                  <div class="pw-strength-track">
+                    <div class="pw-strength-fill" id="pwStrengthFill"></div>
+                  </div>
+                  <div class="pw-strength-text" id="pwStrengthText"></div>
+                </div>
+                <div class="field-error" id="errSetupPw">
+                  <i class="bi bi-exclamation-circle-fill"></i>
+                  <span></span>
+                </div>
+              </div>
+
+              <!-- Confirm Password -->
+              <div class="mb-3">
+                <label class="f-label" for="setupCpw">
+                  Confirm Password <span class="text-danger">*</span>
+                </label>
+                <div class="input-group-auth">
+                  <i class="bi bi-lock-fill input-icon"></i>
+                  <input
+                    type="password"
+                    id="setupCpw"
+                    class="form-control"
+                    placeholder="Re-enter your password"
+                    autocomplete="new-password"
+                    style="padding-right: 2.6rem;"
+                    maxlength="64"
+                  />
+                  <button type="button" class="pw-toggle" id="toggleSetupCpw" tabindex="-1">
+                    <i class="bi bi-eye" id="iconSetupCpw"></i>
+                  </button>
+                </div>
+                <div class="field-error" id="errSetupCpw">
+                  <i class="bi bi-exclamation-circle-fill"></i>
+                  <span></span>
+                </div>
+              </div>
+
+              <!-- Back + Create buttons -->
+              <div class="d-flex gap-2">
+                <button
+                  class="btn-auth btn-secondary-auth"
+                  id="btnStepTwoBack"
+                  type="button"
+                  style="flex: 0 0 auto; width: auto; padding: 0.72rem 1.1rem;"
+                >
+                  <i class="bi bi-arrow-left"></i>
+                </button>
+                <button
+                  class="btn-auth"
+                  id="btnCreateAccount"
+                  type="button"
+                  style="flex: 1;"
+                >
+                  <div class="spinner"></div>
+                  <span class="btn-text">
+                    <i class="bi bi-person-plus-fill"></i>
+                    &nbsp;Create Administrator Account
+                  </span>
+                </button>
+              </div>
+
+            </div><!-- /stepTwo -->
+
+          </div><!-- /card-body -->
+        </div><!-- /auth-card -->
+      </div><!-- /screenSetup -->
+      <!-- =================================================================
+           SCREEN B — SIGN IN
+           
+           Displayed when an administrator account exists in LocalStorage.
+           Fields: Email, Password (show/hide), Remember Me, Forgot Password.
+           On success: creates session → redirects to dashboard.
+           On failure: Bootstrap danger alert + card shake animation.
+      ================================================================= -->
+      <div id="screenLogin" style="display: none;">
+        <div class="auth-card" id="loginCard">
+          <div class="card-body">
+
+            <div class="card-heading">
+              <h2>Sign in to your account</h2>
+              <p id="loginSubtitle">Welcome back</p>
+            </div>
+
+            <div class="auth-divider"></div>
+
+            <!-- Login error alert -->
+            <div class="alert alert-danger d-flex align-items-start gap-2 mb-3"
+                 id="loginAlert" style="display: none !important;">
+              <i class="bi bi-x-circle-fill flex-shrink-0 mt-1"></i>
+              <span id="loginAlertText">Invalid email or password. Please try again.</span>
+            </div>
+
+            <!-- Email Address -->
+            <div class="mb-3">
+              <label class="f-label" for="loginEmail">Email Address</label>
+              <div class="input-group-auth">
+                <i class="bi bi-envelope input-icon"></i>
+                <input
+                  type="email"
+                  id="loginEmail"
+                  class="form-control"
+                  placeholder="Enter your email"
+                  autocomplete="email"
+                  inputmode="email"
+                />
+              </div>
+              <div class="field-error" id="errLoginEmail">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <span></span>
+              </div>
+            </div>
+
+            <!-- Password -->
+            <div class="mb-3">
+              <label class="f-label" for="loginPw">Password</label>
+              <div class="input-group-auth">
+                <i class="bi bi-lock input-icon"></i>
+                <input
+                  type="password"
+                  id="loginPw"
+                  class="form-control"
+                  placeholder="Enter your password"
+                  autocomplete="current-password"
+                  style="padding-right: 2.6rem;"
+                />
+                <button type="button" class="pw-toggle" id="toggleLoginPw" tabindex="-1">
+                  <i class="bi bi-eye" id="iconLoginPw"></i>
+                </button>
+              </div>
+              <div class="field-error" id="errLoginPw">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <span></span>
+              </div>
+            </div>
+
+            <!-- Remember Me + Forgot Password -->
+            <div class="options-row">
+              <label class="check-wrap">
+                <input type="checkbox" id="rememberMe" />
+                Remember me
+              </label>
+              <button class="btn-link-auth" id="btnForgot" type="button">
+                Forgot password?
+              </button>
+            </div>
+
+            <!-- Sign In button -->
+            <button class="btn-auth" id="btnSignIn" type="button">
+              <div class="spinner"></div>
+              <span class="btn-text">
+                <i class="bi bi-box-arrow-in-right"></i>
+                &nbsp;Sign In
+              </span>
+            </button>
+
+            <!-- Admin configured notice -->
+            <div class="admin-notice">
+              Administrator account already configured.<br />
+              <strong>Please sign in to continue.</strong>
+            </div>
+
+          </div><!-- /card-body -->
+        </div><!-- /auth-card -->
+      </div><!-- /screenLogin -->
+
+
+      <!-- =================================================================
+           SCREEN C — FORGOT PASSWORD
+           
+           Prototype-only notice. No actual reset functionality.
+           Shown when user clicks "Forgot password?" on the login screen.
+      ================================================================= -->
+      <div id="screenForgot" style="display: none;">
+        <div class="auth-card">
+          <div class="card-body">
+
+            <div class="card-heading">
+              <h2>Reset Password</h2>
+              <p>Account recovery</p>
+            </div>
+
+            <div class="auth-divider"></div>
+
+            <div class="forgot-panel">
+              <div class="forgot-panel-emoji">🔐</div>
+              <p>
+                <strong style="color: var(--tx-primary);">Prototype Version</strong><br /><br />
+                Password reset is not available in this prototype.
+                This feature will be implemented in the production version
+                with full email-based account recovery.
+              </p>
+            </div>
+
+            <button
+              class="btn-auth btn-secondary-auth"
+              id="btnForgotBack"
+              type="button"
+            >
+              <i class="bi bi-arrow-left"></i>
+              &nbsp;<span class="btn-text">Back to Sign In</span>
+            </button>
+
+          </div>
+        </div>
+      </div><!-- /screenForgot -->
+
 
       <!-- Footer -->
-      <p class="login-panel-footer">
-        &copy; 2024 TradeFlow — Built for Nigerian SMEs &nbsp;·&nbsp;
-        Final Year Project Demo
-      </p>
-    </aside>
-
-    <!-- Right Panel — Sign In Form -->
-    <section class="login-panel-right" aria-label="Sign in form">
-      <div class="login-form-header">
-        <h2 class="login-form-title">Welcome back</h2>
-        <p class="login-form-subtitle">Sign in to your TradeFlow account</p>
+      <div class="auth-footer">
+        <strong>Inventory &amp; Sales Management Platform</strong><br />
+        Prototype Version 1.0 &nbsp;&middot;&nbsp; Final Year Project<br />
+        Developed by Feyisara
       </div>
 
-      <!-- Role Selector -->
-      <div class="role-tabs" role="tablist" aria-label="Select account type">
-        <button
-          class="role-tab active"
-          id="tab-admin"
-          role="tab"
-          aria-selected="true"
-          data-role="admin"
-          onclick="LoginPage.switchRole('admin')"
-        >
-          <i class="fa-solid fa-shield-halved"></i> Administrator
-        </button>
-        <button
-          class="role-tab"
-          id="tab-staff"
-          role="tab"
-          aria-selected="false"
-          data-role="staff"
-          onclick="LoginPage.switchRole('staff')"
-        >
-          <i class="fa-solid fa-user"></i> Staff
-        </button>
-      </div>
+    </div><!-- /auth-wrapper -->
+  </div><!-- /auth-page -->
 
-      <!-- Login Form -->
-      <form class="login-form" id="login-form" novalidate autocomplete="on">
 
-        <!-- Email Field -->
-        <div>
-          <label class="form-label" for="email">Email Address</label>
-          <div class="input-group">
-            <span class="input-group-icon">
-              <i class="fa-regular fa-envelope"></i>
-            </span>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              class="form-control"
-              placeholder="you@example.com"
-              autocomplete="email"
-              inputmode="email"
-              required
-              aria-describedby="email-error"
-            >
-          </div>
-          <div class="form-error d-none" id="email-error" role="alert"></div>
-        </div>
-
-        <!-- Password Field -->
-        <div>
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <label class="form-label" for="password">Password</label>
-          </div>
-          <div class="input-group" style="position:relative;">
-            <span class="input-group-icon">
-              <i class="fa-solid fa-lock"></i>
-            </span>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              class="form-control"
-              placeholder="Enter your password"
-              autocomplete="current-password"
-              required
-              aria-describedby="password-error"
-              style="padding-right:3rem;"
-            >
-            <!-- Password visibility toggle -->
-            <button
-              type="button"
-              class="password-toggle"
-              id="pw-toggle"
-              aria-label="Show password"
-              tabindex="-1"
-            >
-              <i class="fa-regular fa-eye" id="pw-toggle-icon"></i>
-            </button>
-          </div>
-          <div class="form-error d-none" id="password-error" role="alert"></div>
-        </div>
-
-        <!-- Remember Me -->
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <label class="checkbox-label">
-            <input type="checkbox" id="remember-me" name="remember">
-            Remember me for 30 days
-          </label>
-        </div>
-
-        <!-- General Error Banner -->
-        <div
-          class="d-none"
-          id="login-error"
-          role="alert"
-          style="
-            background: var(--color-danger-light);
-            color: var(--color-danger);
-            border: 1px solid var(--color-danger);
-            border-radius: var(--radius-md);
-            padding: var(--space-3) var(--space-4);
-            font-size: var(--text-sm);
-            display: flex;
-            align-items: center;
-            gap: var(--space-2);
-          "
-        >
-          <i class="fa-solid fa-circle-xmark"></i>
-          <span id="login-error-text">Invalid email or password.</span>
-        </div>
-
-        <!-- Submit Button -->
-        <button
-          type="submit"
-          class="btn btn-primary btn-lg w-100"
-          id="login-btn"
-          style="margin-top:var(--space-2);"
-        >
-          <i class="fa-solid fa-arrow-right-to-bracket"></i>
-          Sign In
-        </button>
-
-      </form>
-
-      <!-- Divider -->
-      <div class="divider-text" style="margin-top:var(--space-6);">Quick Access</div>
-
-      <!-- Demo Credentials Box -->
-      <div class="demo-creds" aria-label="Demo credentials">
-        <div class="demo-creds-title">
-          <i class="fa-solid fa-circle-info" style="color:var(--color-primary);"></i>
-          Click a credential to auto-fill
-        </div>
-
-        <!-- Admin -->
-        <div
-          class="demo-cred-item"
-          role="button"
-          tabindex="0"
-          aria-label="Fill admin credentials"
-          onclick="LoginPage.fillCredentials('admin@tradeflow.ng', 'admin123', 'admin')"
-          onkeydown="if(event.key==='Enter')LoginPage.fillCredentials('admin@tradeflow.ng','admin123','admin')"
-        >
-          <div>
-            <div class="demo-cred-label">
-              <i class="fa-solid fa-shield-halved" style="color:var(--color-primary);font-size:0.7rem;"></i>
-              Administrator
-            </div>
-            <div style="color:var(--text-muted);font-size:0.65rem;">admin@tradeflow.ng</div>
-          </div>
-          <div class="demo-cred-value">admin123 →</div>
-        </div>
-
-        <!-- Staff -->
-        <div
-          class="demo-cred-item"
-          role="button"
-          tabindex="0"
-          aria-label="Fill staff credentials"
-          onclick="LoginPage.fillCredentials('staff@tradeflow.ng', 'staff123', 'staff')"
-          onkeydown="if(event.key==='Enter')LoginPage.fillCredentials('staff@tradeflow.ng','staff123','staff')"
-        >
-          <div>
-            <div class="demo-cred-label">
-              <i class="fa-solid fa-user" style="color:var(--color-success);font-size:0.7rem;"></i>
-              Sales Staff
-            </div>
-            <div style="color:var(--text-muted);font-size:0.65rem;">staff@tradeflow.ng</div>
-          </div>
-          <div class="demo-cred-value">staff123 →</div>
-        </div>
-      </div>
-
-      <!-- Footer note -->
-      <p class="login-form-footer">
-        This is a frontend prototype demo.<br>
-        All data is stored locally in your browser.
-      </p>
-    </section>
-
-  </main>
-
-  <!-- ── Toast Container (injected by utils.js) ───────────────────────────── -->
-  <div id="tf-toast-container" class="toast-container" role="region" aria-live="polite"></div>
-
-  <!-- ── Scripts ───────────────────────────────────────────────────────────── -->
-  <!-- Bootstrap JS (for any bootstrap components used) -->
+  <!-- =====================================================================
+       Bootstrap 5 JS Bundle
+  ===================================================================== -->
   <script
     src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
     crossorigin="anonymous"
   ></script>
 
-  <!-- TradeFlow core modules (order matters — storage first) -->
-  <script src="assets/js/storage.js"></script>
-  <script src="assets/js/theme.js"></script>
-  <script src="assets/js/utils.js"></script>
 
+  <!-- =====================================================================
+       PAGE SCRIPT — All authentication logic for index.html
+       
+       Organised into clearly labelled sections:
+         1.  LocalStorage Helpers
+         2.  Theme Management
+         3.  Screen Management
+         4.  Field Validation Helpers
+         5.  Password Helpers
+         6.  Setup Wizard — Step Navigation
+         7.  Setup Wizard — Account Creation
+         8.  Authentication — Sign In
+         9.  Keyboard Navigation
+         10. Boot (DOMContentLoaded entry point)
+  ===================================================================== -->
   <script>
+
+    // =========================================================================
+    // 1. LOCALSTORAGE HELPERS
+    //
+    // All LocalStorage keys are prefixed with "tf_" to match the rest of the
+    // application. These functions mirror the logic in assets/js/storage.js
+    // but are self-contained here so this page has no external dependencies.
+    // =========================================================================
+    /** Namespace prefix — must match assets/js/storage.js */
+    var LS_PREFIX = 'tf_';
+
     /**
-     * Login Page Controller
-     * Handles all interactions on the login screen.
+     * Write any value to LocalStorage as JSON.
+     * @param {string} key   - storage key (without prefix)
+     * @param {*}      value - any JSON-serialisable value
      */
-    const LoginPage = (() => {
+    function lsSet(key, value) {
+      try {
+        localStorage.setItem(LS_PREFIX + key, JSON.stringify(value));
+      } catch (e) {
+        console.warn('[LS] Write failed:', key, e);
+      }
+    }
 
-      // Track which role tab is active
-      let activeRole = 'admin';
+    /**
+     * Read and parse a value from LocalStorage.
+     * Returns `fallback` if the key does not exist or parsing fails.
+     * @param {string} key
+     * @param {*}      fallback
+     * @returns {*}
+     */
+    function lsGet(key, fallback) {
+      try {
+        var raw = localStorage.getItem(LS_PREFIX + key);
+        if (raw === null) return (fallback !== undefined ? fallback : null);
+        return JSON.parse(raw);
+      } catch (e) {
+        return (fallback !== undefined ? fallback : null);
+      }
+    }
 
-      // ─── Init ─────────────────────────────────────────────────────────────
+    /**
+     * Remove a single key from LocalStorage.
+     * @param {string} key
+     */
+    function lsRemove(key) {
+      try { localStorage.removeItem(LS_PREFIX + key); }
+      catch (e) { /* ignore */ }
+    }
 
-      function init() {
-        // 1. Seed default data on very first visit
-        Storage.seedDefaultData();
+    /**
+     * Retrieve all stored users as an array.
+     * @returns {Array}
+     */
+    function getUsers() {
+      return lsGet('users', []);
+    }
 
-        // 2. Apply saved theme
-        Theme.init();
-        Theme.bindToggleButtons();
+    /**
+     * Persist the users array to LocalStorage.
+     * @param {Array} users
+     */
+    function saveUsers(users) {
+      lsSet('users', users);
+    }
 
-        // 3. If already logged in, skip to dashboard
-        if (Storage.isLoggedIn()) {
-          redirectAfterLogin(Storage.getSession().role);
-          return;
+    /**
+     * Find a user by email address (case-insensitive).
+     * @param {string} email
+     * @returns {Object|null}
+     */
+    function findUserByEmail(email) {
+      var all = getUsers();
+      for (var i = 0; i < all.length; i++) {
+        if (all[i].email.toLowerCase() === email.toLowerCase()) {
+          return all[i];
         }
+      }
+      return null;
+    }
 
-        // 4. Check remember-me: pre-fill email if saved
-        const savedEmail = Storage.get('remember_email');
-        if (savedEmail) {
-          document.getElementById('email').value = savedEmail;
-          document.getElementById('remember-me').checked = true;
+    /**
+     * Check whether an administrator account exists in LocalStorage.
+     * @returns {boolean}
+     */
+    function adminExists() {
+      var users = getUsers();
+      for (var i = 0; i < users.length; i++) {
+        if (users[i].role === 'admin') return true;
+      }
+      return false;
+    }
+
+    /**
+     * Create a logged-in session object in LocalStorage.
+     * The session is read by dashboard.html and other pages via storage.js.
+     * @param {Object} user
+     */
+    function createSession(user) {
+      lsSet('session', {
+        id:        user.id,
+        name:      user.name,
+        email:     user.email,
+        role:      user.role,
+        loginTime: new Date().toISOString()
+      });
+    }
+
+    /**
+     * Check whether a session currently exists.
+     * @returns {boolean}
+     */
+    function sessionExists() {
+      return lsGet('session', null) !== null;
+    }
+
+    /**
+     * Generate a simple unique ID string.
+     * Format: prefix_<timestamp_base36>_<random>
+     * Matches the pattern used by assets/js/storage.js generateId().
+     * @param {string} prefix
+     * @returns {string}
+     */
+    function generateId(prefix) {
+      var ts   = Date.now().toString(36);
+      var rand = Math.random().toString(36).slice(2, 6);
+      return (prefix || 'id') + '_' + ts + '_' + rand;
+    }
+
+    /**
+     * Seed default categories, products and settings into LocalStorage.
+     * Only runs once — guarded by the tf_seeded flag.
+     * This matches the behaviour of seedDefaultData() in storage.js.
+     */
+    function seedIfNeeded() {
+      if (lsGet('seeded', false)) return;
+
+      // Default categories
+      var categories = [
+        { id: generateId('cat'), name: 'Food & Beverages',  color: '#10b981' },
+        { id: generateId('cat'), name: 'Household Items',   color: '#6366f1' },
+        { id: generateId('cat'), name: 'Personal Care',     color: '#f43f5e' },
+        { id: generateId('cat'), name: 'Grains & Staples',  color: '#f59e0b' },
+        { id: generateId('cat'), name: 'Drinks & Juices',   color: '#06b6d4' }
+      ];
+      lsSet('categories', categories);
+
+      var c = categories;
+
+      // Default products
+      var products = [
+        { id: generateId('prd'), name: 'Indomie Noodles (Chicken)', sku: 'IND-CHK-001',
+          category: c[0].id, categoryName: c[0].name, price: 150, costPrice: 110,
+          stock: 245, reorderLevel: 50, unit: 'Pack',
+          description: 'Indomie Instant Noodles — Chicken Flavour, 70g',
+          supplier: 'Dufil Prima Foods', active: true,
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: generateId('prd'), name: 'Peak Milk (Tin)', sku: 'PKM-TIN-001',
+          category: c[0].id, categoryName: c[0].name, price: 1850, costPrice: 1400,
+          stock: 80, reorderLevel: 20, unit: 'Tin',
+          description: 'Peak Full Cream Evaporated Milk, 400g',
+          supplier: 'FrieslandCampina WAMCO', active: true,
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: generateId('prd'), name: 'Milo Chocolate Drink', sku: 'MIL-CHO-001',
+          category: c[0].id, categoryName: c[0].name, price: 2200, costPrice: 1700,
+          stock: 12, reorderLevel: 15, unit: 'Tin',
+          description: 'Nestlé Milo Energy Drink, 400g',
+          supplier: 'Nestlé Nigeria', active: true,
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: generateId('prd'), name: 'Coca-Cola (50cl)', sku: 'COC-50CL-001',
+          category: c[4].id, categoryName: c[4].name, price: 300, costPrice: 220,
+          stock: 180, reorderLevel: 48, unit: 'Bottle',
+          description: 'Coca-Cola Carbonated Soft Drink, 500ml',
+          supplier: 'Nigerian Bottling Company', active: true,
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: generateId('prd'), name: 'Golden Penny Pasta', sku: 'GPP-STR-001',
+          category: c[3].id, categoryName: c[3].name, price: 650, costPrice: 500,
+          stock: 95, reorderLevel: 30, unit: 'Pack',
+          description: 'Golden Penny Spaghetti, 500g',
+          supplier: 'Flour Mills of Nigeria', active: true,
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: generateId('prd'), name: 'Dangote Sugar (1kg)', sku: 'DNG-SUG-001',
+          category: c[3].id, categoryName: c[3].name, price: 1100, costPrice: 850,
+          stock: 8, reorderLevel: 20, unit: 'Bag',
+          description: 'Dangote Refined Sugar, 1kg',
+          supplier: 'Dangote Sugar Refinery', active: true,
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: generateId('prd'), name: 'Stallion Rice (5kg)', sku: 'STA-RIC-005',
+          category: c[3].id, categoryName: c[3].name, price: 7500, costPrice: 6000,
+          stock: 35, reorderLevel: 10, unit: 'Bag',
+          description: 'Stallion Long Grain Parboiled Rice, 5kg',
+          supplier: 'Stallion Group', active: true,
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: generateId('prd'), name: 'Dettol Original (250ml)', sku: 'DTL-ORG-250',
+          category: c[2].id, categoryName: c[2].name, price: 950, costPrice: 720,
+          stock: 0, reorderLevel: 10, unit: 'Bottle',
+          description: 'Dettol Antiseptic Liquid, 250ml',
+          supplier: 'Reckitt Benckiser Nigeria', active: true,
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: generateId('prd'), name: 'Omo Washing Powder (500g)', sku: 'OMO-WAS-500',
+          category: c[1].id, categoryName: c[1].name, price: 750, costPrice: 570,
+          stock: 60, reorderLevel: 20, unit: 'Pack',
+          description: 'Omo Multi-Active Washing Powder, 500g',
+          supplier: 'Unilever Nigeria', active: true,
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: generateId('prd'), name: 'Honeywell Semolina (2kg)', sku: 'HNW-SEM-002',
+          category: c[3].id, categoryName: c[3].name, price: 1400, costPrice: 1100,
+          stock: 50, reorderLevel: 15, unit: 'Pack',
+          description: 'Honeywell Semovita Semolina, 2kg',
+          supplier: 'Honeywell Flour Mills', active: true,
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+      ];
+      lsSet('products', products);
+
+      // Default settings
+      lsSet('settings', {
+        currency: 'NGN', currencySymbol: '₦',
+        vatRate: 7.5, vatEnabled: true,
+        lowStockThreshold: 10, timezone: 'Africa/Lagos'
+      });
+
+      // Seed sample sales for the dashboard charts
+      seedSampleSales(products);
+
+      lsSet('seeded', true);
+    }
+
+    /**
+     * Generate realistic sample sales so the dashboard has chart data.
+     * @param {Array} products
+     */
+    function seedSampleSales(products) {
+      var sales = [];
+      var now   = new Date();
+      var seq   = 1000;
+
+      for (var day = 7; day >= 0; day--) {
+        var d = new Date(now);
+        d.setDate(now.getDate() - day);
+
+        var txCount = 3 + Math.floor(Math.random() * 5);
+        for (var t = 0; t < txCount; t++) {
+          var shuffled = products.slice().sort(function() { return 0.5 - Math.random(); });
+          var picked   = shuffled.slice(0, 1 + Math.floor(Math.random() * 3));
+
+          var items = picked.map(function(p) {
+            var qty = 1 + Math.floor(Math.random() * 3);
+            return { productId: p.id, productName: p.name, sku: p.sku,
+                     price: p.price, quantity: qty, subtotal: p.price * qty };
+          });
+
+          var subtotal = items.reduce(function(s, i) { return s + i.subtotal; }, 0);
+          var vat      = subtotal * 0.075;
+          var total    = subtotal + vat;
+          var saleDate = new Date(d);
+          saleDate.setHours(8 + Math.floor(Math.random() * 10),
+                            Math.floor(Math.random() * 60));
+
+          seq++;
+          sales.push({
+            id:            generateId('sal'),
+            receiptNumber: 'TF-' + saleDate.getFullYear() + '-' + seq,
+            items:         items,
+            subtotal:      subtotal, discount: 0,
+            vatRate:       7.5, vatAmount: vat, total: total,
+            paymentMethod: ['cash','transfer','card'][Math.floor(Math.random() * 3)],
+            customerName:  '', cashier: 'Administrator',
+            createdAt:     saleDate.toISOString()
+          });
         }
+      }
 
-        // 5. Bind form submit
-        document.getElementById('login-form').addEventListener('submit', handleSubmit);
+      lsSet('sales',       sales);
+      lsSet('receipt_seq', seq);
+      lsSet('stock_moves', []);
+      lsSet('alerts',      []);
+    }
 
-        // 6. Password toggle
-        document.getElementById('pw-toggle').addEventListener('click', togglePassword);
 
-        // 7. Clear errors on input
-        ['email', 'password'].forEach((id) => {
-          document.getElementById(id).addEventListener('input', clearErrors);
+    // =========================================================================
+    // 2. THEME MANAGEMENT
+    //
+    // Reads saved theme from LocalStorage (key: tf_theme).
+    // Applies it to <html data-theme="...">.
+    // The CSS custom properties defined in this file handle the visual switch.
+    // =========================================================================
+
+    /**
+     * Apply a theme ('light' or 'dark') to the page.
+     * Saves the preference to LocalStorage and updates the toggle icon.
+     * @param {string} theme
+     */
+    function applyTheme(theme) {
+      var t = (theme === 'dark') ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      lsSet('theme', t);
+      updateThemeIcon(t);
+    }
+
+    /**
+     * Update the sun/moon icon on the theme toggle button.
+     * @param {string} theme - 'light' or 'dark'
+     */
+    function updateThemeIcon(theme) {
+      var icon = document.getElementById('themeIcon');
+      if (!icon) return;
+      icon.className = (theme === 'dark') ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+    }
+
+    /**
+     * Toggle between light and dark mode.
+     */
+    function toggleTheme() {
+      var current = document.documentElement.getAttribute('data-theme') || 'light';
+      applyTheme(current === 'dark' ? 'light' : 'dark');
+    }
+
+    /**
+     * Initialise theme from LocalStorage on page load.
+     */
+    function initTheme() {
+      var saved = lsGet('theme', 'light');
+      applyTheme(saved);
+    }
+
+
+    // =========================================================================
+    // 3. SCREEN MANAGEMENT
+    //
+    // Only one screen is visible at a time.
+    // Screens: 'setup' | 'login' | 'forgot'
+    // =========================================================================
+
+    /** All screen element IDs */
+    var SCREENS = ['screenSetup', 'screenLogin', 'screenForgot'];
+
+    /**
+     * Show one screen by name, hide all others.
+     * @param {string} name - 'setup', 'login', or 'forgot'
+     */
+    function showScreen(name) {
+      SCREENS.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+      var target = document.getElementById('screen' + cap(name));
+      if (target) target.style.display = 'block';
+    }
+
+    /**
+     * Show the login screen and populate the business-name subtitle.
+     */
+    function showLoginScreen() {
+      showScreen('login');
+      var settings = lsGet('settings', {});
+      var subtitle = document.getElementById('loginSubtitle');
+      if (subtitle) {
+        subtitle.textContent = settings.businessName
+          ? ('Welcome back \u2014 ' + settings.businessName)
+          : 'Welcome back';
+      }
+    }
+
+    /**
+     * Capitalise the first letter of a string.
+     * @param {string} s
+     * @returns {string}
+     */
+    function cap(s) {
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+    // =========================================================================
+    // 4. FIELD VALIDATION HELPERS
+    //
+    // Show/hide inline errors below inputs.
+    // Show/hide Bootstrap alert banners.
+    // Set/unset button loading state.
+    // =========================================================================
+
+    /**
+     * Show an inline field error beneath an input.
+     * Adds Bootstrap is-invalid class to the input.
+     * @param {string} errId   - id of the .field-error element
+     * @param {string} inputId - id of the input
+     * @param {string} message - error text
+     */
+    function showFieldError(errId, inputId, message) {
+      var errEl   = document.getElementById(errId);
+      var inputEl = document.getElementById(inputId);
+      if (errEl) {
+        errEl.querySelector('span').textContent = message;
+        errEl.classList.add('show');
+      }
+      if (inputEl) inputEl.classList.add('is-invalid');
+    }
+
+    /**
+     * Clear a single field error.
+     * @param {string} errId
+     * @param {string} inputId
+     */
+    function clearFieldError(errId, inputId) {
+      var errEl   = document.getElementById(errId);
+      var inputEl = document.getElementById(inputId);
+      if (errEl)   errEl.classList.remove('show');
+      if (inputEl) inputEl.classList.remove('is-invalid');
+    }
+
+    /**
+     * Clear multiple field errors at once.
+     * @param {Array<Array<string>>} pairs - [[errId, inputId], ...]
+     */
+    function clearFieldErrors(pairs) {
+      pairs.forEach(function(p) { clearFieldError(p[0], p[1]); });
+    }
+
+    /**
+     * Show a Bootstrap alert banner (overrides the !important display:none).
+     * @param {string} alertId
+     * @param {string} textId
+     * @param {string} message
+     */
+    function showAlert(alertId, textId, message) {
+      var alertEl = document.getElementById(alertId);
+      var textEl  = document.getElementById(textId);
+      if (textEl)  textEl.textContent = message;
+      if (alertEl) {
+        alertEl.style.removeProperty('display');
+        alertEl.style.display = 'flex';
+      }
+    }
+
+    /**
+     * Hide a Bootstrap alert banner.
+     * @param {string} alertId
+     */
+    function hideAlert(alertId) {
+      var alertEl = document.getElementById(alertId);
+      if (alertEl) alertEl.style.display = 'none';
+    }
+
+    /**
+     * Enable or disable the loading state on a button.
+     * Shows spinner and dims label text.
+     * @param {string}  btnId
+     * @param {boolean} isLoading
+     */
+    function setLoading(btnId, isLoading) {
+      var btn = document.getElementById(btnId);
+      if (!btn) return;
+      btn.disabled = isLoading;
+      if (isLoading) {
+        btn.classList.add('loading');
+      } else {
+        btn.classList.remove('loading');
+      }
+    }
+
+    /**
+     * Bind input event listeners to clear errors automatically when user types.
+     * @param {Array<Array<string>>} pairs   - [[errId, inputId], ...]
+     * @param {string}               alertId - alert to hide on any input
+     */
+    function bindAutoClear(pairs, alertId) {
+      pairs.forEach(function(p) {
+        var input = document.getElementById(p[1]);
+        if (!input) return;
+        input.addEventListener('input', function() {
+          clearFieldError(p[0], p[1]);
+          if (alertId) hideAlert(alertId);
         });
+      });
+    }
 
-        // 8. Populate decorative panel stats (from LocalStorage if seeded)
-        updatePanelStats();
+    /**
+     * Validate an email address format.
+     * @param {string} email
+     * @returns {boolean}
+     */
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
 
-        // 9. Register service worker
-        registerSW();
-      }
 
-      // ─── Role Tab Switching ───────────────────────────────────────────────
+    // =========================================================================
+    // 5. PASSWORD HELPERS
+    //
+    // Show/hide password toggle.
+    // Password strength bar (visual feedback as user types).
+    // =========================================================================
 
-      function switchRole(role) {
-        activeRole = role;
-
-        // Update tab active state
-        document.querySelectorAll('.role-tab').forEach((tab) => {
-          const isActive = tab.dataset.role === role;
-          tab.classList.toggle('active', isActive);
-          tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
-        });
-
-        // Clear form
-        document.getElementById('email').value    = '';
-        document.getElementById('password').value = '';
-        clearErrors();
-      }
-
-      // ─── Fill Credentials (demo shortcut) ────────────────────────────────
-
-      function fillCredentials(email, password, role) {
-        // Switch to correct role tab
-        switchRole(role);
-
-        // Fill fields with a slight animation delay
-        const emailEl    = document.getElementById('email');
-        const passwordEl = document.getElementById('password');
-
-        emailEl.value    = email;
-        passwordEl.value = password;
-
-        // Visual feedback
-        emailEl.focus();
-        emailEl.classList.add('border-primary');
-        setTimeout(() => emailEl.classList.remove('border-primary'), 800);
-
-        Utils.toastInfo('Credentials Filled', `Ready to sign in as ${role}.`);
-      }
-
-      // ─── Form Submit ──────────────────────────────────────────────────────
-
-      async function handleSubmit(e) {
-        e.preventDefault();
-        clearErrors();
-
-        const email    = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
-        const remember = document.getElementById('remember-me').checked;
-        const btn      = document.getElementById('login-btn');
-
-        // Client-side validation
-        let hasError = false;
-
-        if (!email) {
-          showFieldError('email', 'Please enter your email address.');
-          hasError = true;
-        } else if (!Utils.isValidEmail(email)) {
-          showFieldError('email', 'Please enter a valid email address.');
-          hasError = true;
+    /**
+     * Bind a show/hide password toggle to an input field.
+     * Clicking the button toggles input type between 'password' and 'text'
+     * and swaps the eye icon accordingly.
+     *
+     * @param {string} btnId   - id of the toggle button
+     * @param {string} inputId - id of the password input
+     * @param {string} iconId  - id of the <i> icon inside the button
+     */
+    function bindPasswordToggle(btnId, inputId, iconId) {
+      var btn = document.getElementById(btnId);
+      if (!btn) return;
+      btn.addEventListener('click', function() {
+        var input = document.getElementById(inputId);
+        var icon  = document.getElementById(iconId);
+        if (!input) return;
+        var isVisible = input.type === 'text';
+        input.type    = isVisible ? 'password' : 'text';
+        if (icon) {
+          icon.className = isVisible ? 'bi bi-eye' : 'bi bi-eye-slash';
         }
+      });
+    }
 
-        if (!password) {
-          showFieldError('password', 'Please enter your password.');
-          hasError = true;
-        }
+    /**
+     * Calculate password strength from 0 to 4.
+     * Criteria: length >= 8, length >= 12, uppercase, digit, special char.
+     *
+     * @param {string} pw
+     * @returns {{ label: string, color: string, width: string }}
+     */
+    function calcStrength(pw) {
+      var score = 0;
+      if (pw.length >= 8)              score++;
+      if (pw.length >= 12)             score++;
+      if (/[A-Z]/.test(pw))            score++;
+      if (/[0-9]/.test(pw))            score++;
+      if (/[^A-Za-z0-9]/.test(pw))     score++;
 
-        if (hasError) return;
+      var levels = [
+        { label: 'Very weak',   color: 'var(--c-danger)',   width: '15%'  },
+        { label: 'Weak',        color: '#f97316',           width: '30%'  },
+        { label: 'Fair',        color: 'var(--c-warning)',  width: '55%'  },
+        { label: 'Strong',      color: 'var(--c-success)',  width: '80%'  },
+        { label: 'Very strong', color: '#10b981',           width: '100%' }
+      ];
+      return levels[Math.min(score, 4)];
+    }
 
-        // Simulate async network request for realism
-        btn.classList.add('btn-loading');
-        btn.innerHTML = '<span style="opacity:0;">Signing in...</span>';
+    /**
+     * Update the password strength bar and label as the user types.
+     * Hides the bar completely when the input is empty.
+     * @param {string} password - current value of the password field
+     */
+    function updateStrengthBar(password) {
+      var wrap  = document.getElementById('pwStrengthWrap');
+      var fill  = document.getElementById('pwStrengthFill');
+      var label = document.getElementById('pwStrengthText');
+      if (!wrap) return;
 
-        await delay(800);
+      if (!password) {
+        wrap.classList.remove('show');
+        return;
+      }
+      wrap.classList.add('show');
 
-        btn.classList.remove('btn-loading');
-        btn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In';
+      var s = calcStrength(password);
+      if (fill) {
+        fill.style.width           = s.width;
+        fill.style.backgroundColor = s.color;
+      }
+      if (label) {
+        label.textContent  = s.label;
+        label.style.color  = s.color;
+      }
+    }
 
-        // Authenticate against LocalStorage users
-        const user = Storage.getUserByEmail(email);
 
-        if (!user || user.password !== password) {
-          showLoginError('Incorrect email or password. Please try again.');
-          // Shake the form for visual feedback
-          const form = document.getElementById('login-form');
-          form.style.animation = 'shake 0.4s ease';
-          setTimeout(() => form.style.animation = '', 500);
+    // =========================================================================
+    // 6. SETUP WIZARD — STEP NAVIGATION
+    //
+    // Manages the two-step wizard for first-time setup.
+    // Step 1: Business Name + Administrator Name
+    // Step 2: Email + Password + Confirm Password
+    // =========================================================================
+
+    /** Values collected in Step 1, carried into Step 2 */
+    var wizard = { bizName: '', adminName: '' };
+
+    /**
+     * Validate Step 1 fields and advance to Step 2 if valid.
+     * Called by the "Continue" button and Enter key on Step 1 fields.
+     */
+    function handleStepOneNext() {
+      // Clear previous errors
+      clearFieldErrors([
+        ['errBizName', 'bizName'],
+        ['errAdminName', 'adminName']
+      ]);
+      hideAlert('setupAlertError');
+
+      var biz   = (document.getElementById('bizName').value   || '').trim();
+      var admin = (document.getElementById('adminName').value || '').trim();
+      var valid = true;
+
+      if (!biz) {
+        showFieldError('errBizName', 'bizName', 'Business name is required.');
+        valid = false;
+      }
+      if (!admin) {
+        showFieldError('errAdminName', 'adminName', 'Administrator full name is required.');
+        valid = false;
+      }
+      if (!valid) return;
+
+      // Store and advance
+      wizard.bizName   = biz;
+      wizard.adminName = admin;
+      goToStepTwo();
+    }
+
+    /**
+     * Transition the wizard from Step 1 to Step 2.
+     * Updates heading text and progress dots.
+     */
+    function goToStepTwo() {
+      document.getElementById('stepOne').style.display = 'none';
+      document.getElementById('stepTwo').style.display = 'block';
+
+      document.getElementById('setupHeading').textContent =
+        'Create your login credentials';
+      document.getElementById('setupSubheading').textContent =
+        'Setting up account for ' + wizard.adminName;
+
+      var dotA = document.getElementById('dotA');
+      var dotB = document.getElementById('dotB');
+      if (dotA) { dotA.classList.remove('active'); dotA.classList.add('done'); }
+      if (dotB)   dotB.classList.add('active');
+
+      var emailField = document.getElementById('setupEmail');
+      if (emailField) emailField.focus();
+    }
+
+    /**
+     * Transition back from Step 2 to Step 1.
+     * Resets heading text and progress dots.
+     */
+    function goToStepOne() {
+      document.getElementById('stepTwo').style.display = 'none';
+      document.getElementById('stepOne').style.display = 'block';
+
+      document.getElementById('setupHeading').textContent =
+        'Welcome \u2014 Set up your account';
+      document.getElementById('setupSubheading').textContent =
+        'No administrator account found. Create one to get started.';
+
+      var dotA = document.getElementById('dotA');
+      var dotB = document.getElementById('dotB');
+      if (dotA) { dotA.classList.remove('done'); dotA.classList.add('active'); }
+      if (dotB)   dotB.classList.remove('active');
+    }
+    // =========================================================================
+    // 7. SETUP WIZARD — ACCOUNT CREATION
+    //
+    // Validates Step 2 fields.
+    // Saves the administrator account to LocalStorage.
+    // Seeds default data (categories, products, sample sales).
+    // Shows success message and redirects to login after 2 seconds.
+    // =========================================================================
+
+    /**
+     * Handle the "Create Administrator Account" button click.
+     * Validates all credential fields, then saves the account.
+     */
+    function handleCreateAccount() {
+      // Clear previous errors
+      clearFieldErrors([
+        ['errSetupEmail', 'setupEmail'],
+        ['errSetupPw',    'setupPw'],
+        ['errSetupCpw',   'setupCpw']
+      ]);
+      hideAlert('setupAlertError');
+      hideAlert('setupAlertSuccess');
+
+      var email = (document.getElementById('setupEmail').value || '').trim();
+      var pw    =  document.getElementById('setupPw').value    || '';
+      var cpw   =  document.getElementById('setupCpw').value   || '';
+      var valid = true;
+
+      // Validate email
+      if (!email) {
+        showFieldError('errSetupEmail', 'setupEmail', 'Email address is required.');
+        valid = false;
+      } else if (!isValidEmail(email)) {
+        showFieldError('errSetupEmail', 'setupEmail', 'Please enter a valid email address.');
+        valid = false;
+      }
+
+      // Validate password length
+      if (!pw) {
+        showFieldError('errSetupPw', 'setupPw', 'Password is required.');
+        valid = false;
+      } else if (pw.length < 8) {
+        showFieldError('errSetupPw', 'setupPw', 'Password must be at least 8 characters long.');
+        valid = false;
+      }
+
+      // Validate password match
+      if (pw && pw.length >= 8 && cpw !== pw) {
+        showFieldError('errSetupCpw', 'setupCpw', 'Passwords do not match. Please try again.');
+        valid = false;
+      }
+
+      if (!valid) return;
+
+      // Show loading state
+      setLoading('btnCreateAccount', true);
+
+      // Use a short delay for UX realism
+      setTimeout(function() {
+
+        // Check for duplicate email (shouldn't happen on first launch, but guard anyway)
+        if (findUserByEmail(email)) {
+          setLoading('btnCreateAccount', false);
+          showAlert('setupAlertError', 'setupAlertErrorText',
+            'An account with this email already exists.');
           return;
         }
 
-        if (!user.active) {
-          showLoginError('This account has been deactivated. Contact your administrator.');
-          return;
-        }
-
-        // Role check: ensure the selected tab matches the user's actual role
-        // (We allow any role to sign in — the tab is just a hint for UX)
-
-        // ✅ Login successful
-        // Save session
-        const session = {
-          id:        user.id,
-          name:      user.name,
-          email:     user.email,
-          role:      user.role,
-          loginTime: new Date().toISOString(),
+        // Build the administrator user object
+        var adminUser = {
+          id:          generateId('usr'),
+          name:        wizard.adminName,
+          email:       email,
+          password:    pw,
+          role:        'admin',
+          active:      true,
+          createdDate: new Date().toISOString()
         };
-        Storage.setSession(session);
 
-        // Handle remember-me
-        if (remember) {
-          Storage.set('remember_email', email);
-        } else {
-          Storage.remove('remember_email');
-        }
+        // Save user to LocalStorage
+        var users = getUsers();
+        users.push(adminUser);
+        saveUsers(users);
 
-        // Success toast
-        Utils.toastSuccess('Welcome back!', `Signed in as ${user.name}`);
+        // Save business name into settings
+        var existingSettings = lsGet('settings', {});
+        existingSettings.businessName    = wizard.bizName;
+        existingSettings.administratorName = wizard.adminName;
+        lsSet('settings', existingSettings);
 
-        // Redirect after brief delay
-        await delay(600);
-        redirectAfterLogin(user.role);
+        // Seed categories, products and sample sales (runs once)
+        seedIfNeeded();
+
+        setLoading('btnCreateAccount', false);
+
+        // Show success message
+        showAlert(
+          'setupAlertSuccess',
+          'setupAlertSuccessText',
+          'Administrator account created successfully! Redirecting to Sign In\u2026'
+        );
+
+        // Disable the create button to prevent double-submit
+        var btn = document.getElementById('btnCreateAccount');
+        if (btn) btn.disabled = true;
+
+        // Redirect to login screen after 2 seconds
+        setTimeout(function() {
+          showLoginScreen();
+        }, 2000);
+
+      }, 900);
+    }
+
+
+    // =========================================================================
+    // 8. AUTHENTICATION — SIGN IN
+    //
+    // Reads email and password from the login form.
+    // Looks up the user in LocalStorage.
+    // Creates a session on success and redirects to the dashboard.
+    // Shows a Bootstrap danger alert and card shake on failure.
+    // =========================================================================
+
+    /**
+     * Handle the Sign In button click.
+     */
+    function handleSignIn() {
+      // Clear previous errors
+      clearFieldErrors([
+        ['errLoginEmail', 'loginEmail'],
+        ['errLoginPw',    'loginPw']
+      ]);
+      hideAlert('loginAlert');
+
+      var email = (document.getElementById('loginEmail').value || '').trim();
+      var pw    =  document.getElementById('loginPw').value    || '';
+      var remem =  document.getElementById('rememberMe').checked || false;
+      var valid = true;
+
+      // Client-side validation
+      if (!email) {
+        showFieldError('errLoginEmail', 'loginEmail', 'Please enter your email address.');
+        valid = false;
+      } else if (!isValidEmail(email)) {
+        showFieldError('errLoginEmail', 'loginEmail', 'Please enter a valid email address.');
+        valid = false;
       }
 
-      // ─── Post-Login Redirect ──────────────────────────────────────────────
+      if (!pw) {
+        showFieldError('errLoginPw', 'loginPw', 'Please enter your password.');
+        valid = false;
+      }
 
-      function redirectAfterLogin(role) {
-        // Check if there was a redirect parameter
-        const params   = new URLSearchParams(window.location.search);
-        const redirect = params.get('redirect');
+      if (!valid) return;
 
-        if (redirect) {
-          window.location.href = decodeURIComponent(redirect);
+      // Show loading state
+      setLoading('btnSignIn', true);
+
+      setTimeout(function() {
+
+        // Look up the user in LocalStorage
+        var user = findUserByEmail(email);
+
+        // Check credentials
+        if (!user || user.password !== pw) {
+          setLoading('btnSignIn', false);
+
+          showAlert('loginAlert', 'loginAlertText',
+            'Invalid email or password. Please try again.');
+
+          // Shake the card for visual feedback
+          var card = document.getElementById('loginCard');
+          if (card) {
+            card.classList.remove('shake');
+            // Force reflow so animation retriggers if already shaking
+            void card.offsetWidth;
+            card.classList.add('shake');
+            card.addEventListener('animationend', function() {
+              card.classList.remove('shake');
+            }, { once: true });
+          }
           return;
         }
 
-        // Default: everyone goes to dashboard
+        // Check account is active
+        if (!user.active) {
+          setLoading('btnSignIn', false);
+          showAlert('loginAlert', 'loginAlertText',
+            'This account has been deactivated. Contact your administrator.');
+          return;
+        }
+
+        // SUCCESS — create session in LocalStorage
+        createSession(user);
+
+        // Handle Remember Me
+        if (remem) {
+          localStorage.setItem('remember_email', email);
+        } else {
+          localStorage.removeItem('remember_email');
+        }
+
+        // Redirect to dashboard (other pages use tf_ prefix via storage.js)
         window.location.href = 'pages/dashboard.html';
+
+      }, 800);
+    }
+
+
+    // =========================================================================
+    // 9. KEYBOARD NAVIGATION
+    //
+    // Enter key moves focus to the next field or submits the form.
+    // Matches the UX of native form submission without using <form> tags.
+    // =========================================================================
+
+    /**
+     * Attach an Enter key listener to an input element.
+     * @param {string}   inputId - element id
+     * @param {Function} fn      - function to call on Enter press
+     */
+    function onEnter(inputId, fn) {
+      var el = document.getElementById(inputId);
+      if (!el) return;
+      el.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') fn();
+      });
+    }
+
+    /**
+     * Move focus to another element when Enter is pressed.
+     * @param {string} fromId - current input
+     * @param {string} toId   - next input to focus
+     */
+    function focusOnEnter(fromId, toId) {
+      onEnter(fromId, function() {
+        var next = document.getElementById(toId);
+        if (next) next.focus();
+      });
+    }
+
+
+    // =========================================================================
+    // 10. BOOT
+    //
+    // DOMContentLoaded entry point.
+    // Decides which screen to display based on LocalStorage state.
+    // Binds all event listeners.
+    // =========================================================================
+
+    document.addEventListener('DOMContentLoaded', function() {
+
+      // -----------------------------------------------------------------
+      // A. Apply saved theme before anything renders (prevents flash)
+      // -----------------------------------------------------------------
+      initTheme();
+
+      // -----------------------------------------------------------------
+      // B. Bind the theme toggle button
+      // -----------------------------------------------------------------
+      var themeBtn = document.getElementById('themeBtn');
+      if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+
+      // -----------------------------------------------------------------
+      // C. If already logged in, skip straight to dashboard
+      // -----------------------------------------------------------------
+      if (sessionExists()) {
+        window.location.href = 'pages/dashboard.html';
+        return;
       }
 
-      // ─── Error Helpers ────────────────────────────────────────────────────
+      // -----------------------------------------------------------------
+      // D. Check for existing administrator account
+      // -----------------------------------------------------------------
+      var hasAdmin = adminExists();
 
-      function showFieldError(fieldId, message) {
-        const field   = document.getElementById(fieldId);
-        const errorEl = document.getElementById(`${fieldId}-error`);
-        field?.classList.add('is-invalid');
-        if (errorEl) {
-          errorEl.textContent = message;
-          errorEl.classList.remove('d-none');
+      if (hasAdmin) {
+        // ── RETURNING USER: show login screen ──────────────────────────
+
+        showLoginScreen();
+
+        // Pre-fill email if Remember Me was used
+        var savedEmail = localStorage.getItem('remember_email');
+        if (savedEmail) {
+          var emailInput = document.getElementById('loginEmail');
+          if (emailInput) emailInput.value = savedEmail;
+          var remBox = document.getElementById('rememberMe');
+          if (remBox) remBox.checked = true;
         }
-      }
 
-      function showLoginError(message) {
-        const errorEl  = document.getElementById('login-error');
-        const errorTxt = document.getElementById('login-error-text');
-        if (errorTxt) errorTxt.textContent = message;
-        errorEl?.classList.remove('d-none');
-        // Show as flex (override d-none)
-        if (errorEl) errorEl.style.display = 'flex';
-      }
+        // Bind login button
+        var btnSignIn = document.getElementById('btnSignIn');
+        if (btnSignIn) btnSignIn.addEventListener('click', handleSignIn);
 
-      function clearErrors() {
-        document.querySelectorAll('.form-control').forEach((el) => {
-          el.classList.remove('is-invalid');
-        });
-        document.querySelectorAll('.form-error').forEach((el) => {
-          el.classList.add('d-none');
-          el.textContent = '';
-        });
-        const loginError = document.getElementById('login-error');
-        if (loginError) {
-          loginError.style.display = 'none';
-          loginError.classList.add('d-none');
+        // Enter key flow: email → password → submit
+        focusOnEnter('loginEmail', 'loginPw');
+        onEnter('loginPw', handleSignIn);
+
+        // Password toggle
+        bindPasswordToggle('toggleLoginPw', 'loginPw', 'iconLoginPw');
+
+        // Auto-clear field errors on input
+        bindAutoClear([
+          ['errLoginEmail', 'loginEmail'],
+          ['errLoginPw',    'loginPw']
+        ], 'loginAlert');
+
+        // Forgot password → show forgot screen
+        var btnForgot = document.getElementById('btnForgot');
+        if (btnForgot) {
+          btnForgot.addEventListener('click', function() {
+            showScreen('forgot');
+          });
         }
-      }
 
-      // ─── Password Toggle ──────────────────────────────────────────────────
-
-      function togglePassword() {
-        const input    = document.getElementById('password');
-        const icon     = document.getElementById('pw-toggle-icon');
-        const isHidden = input.type === 'password';
-
-        input.type = isHidden ? 'text' : 'password';
-        icon.className = isHidden ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
-        document.getElementById('pw-toggle').setAttribute(
-          'aria-label', isHidden ? 'Hide password' : 'Show password'
-        );
-      }
-
-      // ─── Panel Stats (decorative) ─────────────────────────────────────────
-
-      function updatePanelStats() {
-        // Show live data from LocalStorage in the decorative left panel
-        const today  = new Date().toISOString().split('T')[0];
-        const sales  = Storage.getSales().filter((s) => s.createdAt?.startsWith(today));
-        const revenue = sales.reduce((s, x) => s + (x.total || 0), 0);
-        const products = Storage.getProducts().filter((p) => p.active && p.stock > 0).length;
-
-        const revenueEl  = document.getElementById('panel-revenue');
-        const salesEl    = document.getElementById('panel-sales');
-        const productsEl = document.getElementById('panel-products');
-
-        if (revenueEl)  revenueEl.textContent  = Utils.formatCurrency(revenue, true);
-        if (salesEl)    salesEl.textContent     = sales.length;
-        if (productsEl) productsEl.textContent  = products;
-      }
-
-      // ─── Helpers ──────────────────────────────────────────────────────────
-
-      function delay(ms) {
-        return new Promise((resolve) => setTimeout(resolve, ms));
-      }
-
-      function registerSW() {
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker
-            .register('./sw.js')
-            .catch((err) => console.warn('[Login] SW registration failed:', err));
+        // Back from forgot screen
+        var btnForgotBack = document.getElementById('btnForgotBack');
+        if (btnForgotBack) {
+          btnForgotBack.addEventListener('click', function() {
+            showLoginScreen();
+          });
         }
+
+      } else {
+        // ── FIRST LAUNCH: show setup screen ────────────────────────────
+
+        showScreen('setup');
+
+        // Step 1 bindings
+        var btnNext = document.getElementById('btnStepOneNext');
+        if (btnNext) btnNext.addEventListener('click', handleStepOneNext);
+
+        // Enter key flow for step 1
+        focusOnEnter('bizName', 'adminName');
+        onEnter('adminName', handleStepOneNext);
+
+        // Auto-clear step 1 field errors
+        bindAutoClear([
+          ['errBizName',   'bizName'],
+          ['errAdminName', 'adminName']
+        ], 'setupAlertError');
+
+        // Step 2 bindings
+        var btnBack = document.getElementById('btnStepTwoBack');
+        if (btnBack) btnBack.addEventListener('click', goToStepOne);
+
+        var btnCreate = document.getElementById('btnCreateAccount');
+        if (btnCreate) btnCreate.addEventListener('click', handleCreateAccount);
+
+        // Password toggles for step 2
+        bindPasswordToggle('toggleSetupPw',  'setupPw',  'iconSetupPw');
+        bindPasswordToggle('toggleSetupCpw', 'setupCpw', 'iconSetupCpw');
+
+        // Password strength bar — updates as user types
+        var pwInput = document.getElementById('setupPw');
+        if (pwInput) {
+          pwInput.addEventListener('input', function(e) {
+            updateStrengthBar(e.target.value);
+          });
+        }
+         // Enter key flow for step 2
+        focusOnEnter('setupEmail', 'setupPw');
+        focusOnEnter('setupPw',    'setupCpw');
+        onEnter('setupCpw', handleCreateAccount);
+
+        // Auto-clear step 2 field errors
+        bindAutoClear([
+          ['errSetupEmail', 'setupEmail'],
+          ['errSetupPw',    'setupPw'],
+          ['errSetupCpw',   'setupCpw']
+        ], 'setupAlertError');
       }
 
-      // Public API
-      return { init, switchRole, fillCredentials };
+    }); // end DOMContentLoaded
 
-    })();
-
-    // Add the CSS shake animation dynamically
-    const shakeStyle = document.createElement('style');
-    shakeStyle.textContent = `
-      @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        20%       { transform: translateX(-8px); }
-        40%       { transform: translateX(8px); }
-        60%       { transform: translateX(-5px); }
-        80%       { transform: translateX(5px); }
-      }
-    `;
-    document.head.appendChild(shakeStyle);
-
-    // Boot on DOM ready
-    document.addEventListener('DOMContentLoaded', LoginPage.init);
   </script>
 
 </body>
 </html>
+
+
+
+
