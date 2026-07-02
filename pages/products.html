@@ -509,15 +509,26 @@ const Products = (() => {
   let productModal, deactivateModal, viewProductModal;
 
   // ── Init ─────────────────────────────────────────────────────────────────
+    // ── Init ─────────────────────────────────────────────────────────────────
   function init() {
     productModal    = new bootstrap.Modal(document.getElementById('product-modal'));
     deactivateModal = new bootstrap.Modal(document.getElementById('deactivate-modal'));
     viewProductModal = new bootstrap.Modal(document.getElementById('view-product-modal'));
 
+    // Automatically switch to card mode on mobile screens before loading data
+    if (window.innerWidth <= 767) {
+      viewMode = 'card';
+      const tv = document.getElementById('table-view');
+      const cv = document.getElementById('card-view');
+      if (tv) tv.style.display = 'none';
+      if (cv) cv.style.display = 'grid';
+    }
+
     populateCategoryDropdowns();
     bindEvents();
     loadAndRender();
   }
+
 
   // ── Data Loading ─────────────────────────────────────────────────────────
   function loadAndRender() {

@@ -461,20 +461,53 @@
     }
 
     @media (max-width: 640px) {
-      .pos-layout { flex-direction: column; }
+      /* Force layout wrapper to un-dock and handle scrolling fields organically */
+      .page-content {
+        height: auto !important;
+        overflow-y: auto !important;
+      }
+      
+      .pos-layout { 
+        flex-direction: column; 
+        overflow: visible !important;
+      }
 
-      /* Product panel takes most of the height */
-      .pos-products-panel { flex: 1; border-right: none; border-bottom: 1px solid var(--border-color); }
+      /* Allow the product grid panel to size cleanly based on active item counts */
+      .pos-products-panel { 
+        flex: none; 
+        width: 100%;
+        height: 450px; /* Fixed viewport box for easy product browsing on mobile */
+        border-right: none; 
+        border-bottom: 1px solid var(--border-color); 
+      }
 
-      /* Cart collapses to bottom strip, expands on tap */
+      /* Turn cart panel into an easily scrollable bottom checkout area */
       .pos-cart-panel {
         width: 100%;
-        max-height: 50vh;
+        height: auto !important;
+        max-height: none !important;
         border-top: 2px solid var(--border-color);
         flex-shrink: 0;
+        overflow: visible !important;
       }
-      .pos-products-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+
+      /* Make sure the internal items wrapper stays constrained if many items are added */
+      .cart-items {
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .pos-products-grid { 
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+        padding: var(--space-3);
+      }
+      
+      /* Make payment select boxes easier to tap with fingers */
+      .payment-methods {
+        gap: var(--space-3);
+      }
     }
+
 
     /* Print styles — receipt only */
     @media print {

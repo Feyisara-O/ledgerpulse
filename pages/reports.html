@@ -231,18 +231,17 @@
           <h1 class="section-title">Reports</h1>
           <p class="section-subtitle" id="reports-period-label">Loading...</p>
         </div>
-
-        <!-- Export buttons — disabled in prototype -->
         <div style="display:flex;gap:var(--space-2);">
-          <button class="btn btn-outline export-btn" disabled>
+          <button class="btn btn-outline" id="active-export-csv">
             <i class="fa-solid fa-file-csv"></i>
             <span class="d-none d-sm-inline">Export CSV</span>
           </button>
-          <button class="btn btn-outline export-btn" disabled>
+          <button class="btn btn-outline" id="active-export-pdf">
             <i class="fa-solid fa-file-pdf"></i>
-            <span class="d-none d-sm-inline">Export PDF</span>
+            <span class="d-none d-sm-inline">Print PDF</span>
           </button>
         </div>
+
       </div>
 
       <!-- ── Period Filter Bar ── -->
@@ -260,11 +259,11 @@
             </div>
 
             <!-- Custom date range (hidden unless 'custom' selected) -->
-            <div id="custom-range" style="display:none;display:flex;align-items:center;gap:var(--space-2);">
-              <input type="date" id="custom-from" class="form-control" style="width:auto;">
-              <span style="color:var(--text-muted);font-size:var(--text-sm);">to</span>
-              <input type="date" id="custom-to" class="form-control" style="width:auto;">
-              <button class="btn btn-primary btn-sm" id="apply-custom-btn">Apply</button>
+                        <div id="custom-range" style="display:none; display:flex; align-items:center; gap:var(--space-2); flex-wrap:wrap; width:100%;">
+              <input type="date" id="custom-from" class="form-control" style="flex: 1; min-width: 120px;">
+              <span style="color:var(--text-muted); font-size:var(--text-sm);">to</span>
+              <input type="date" id="custom-to" class="form-control" style="flex: 1; min-width: 120px;">
+              <button class="btn btn-primary btn-sm" id="apply-custom-btn" style="width: 100%; margin-top: var(--space-1);">Apply</button>
             </div>
 
           </div>
@@ -278,61 +277,62 @@
         <i class="fa-solid fa-chart-line"></i> Sales Summary
       </div>
 
-      <div class="row g-3 mb-5">
-        <div class="col-6 col-md-4 col-lg-2">
-          <div class="metric-card">
+            <div class="row g-3 mb-5">
+        <!-- Changed to col-12 col-sm-6 col-lg-2 and added styles to prevent currency cut-off -->
+        <div class="col-12 col-sm-6 col-lg-2">
+          <div class="metric-card" style="word-wrap: break-word; min-width: 0;">
             <div class="metric-label">Revenue</div>
-            <div class="metric-value" id="m-revenue">₦0</div>
+            <div class="metric-value" id="m-revenue" style="font-size: clamp(1.2rem, 4vw, var(--text-2xl));">₦0</div>
             <div class="metric-sub">Gross sales</div>
             <div class="metric-icon" style="background:var(--color-primary-light);color:var(--color-primary);">
               <i class="fa-solid fa-naira-sign"></i>
             </div>
           </div>
         </div>
-        <div class="col-6 col-md-4 col-lg-2">
-          <div class="metric-card">
+        <div class="col-12 col-sm-6 col-lg-2">
+          <div class="metric-card" style="word-wrap: break-word; min-width: 0;">
             <div class="metric-label">Transactions</div>
-            <div class="metric-value" id="m-count">0</div>
+            <div class="metric-value" id="m-count" style="font-size: clamp(1.2rem, 4vw, var(--text-2xl));">0</div>
             <div class="metric-sub">Total sales</div>
             <div class="metric-icon" style="background:var(--color-success-light);color:var(--color-success);">
               <i class="fa-solid fa-receipt"></i>
             </div>
           </div>
         </div>
-        <div class="col-6 col-md-4 col-lg-2">
-          <div class="metric-card">
+        <div class="col-12 col-sm-6 col-lg-2">
+          <div class="metric-card" style="word-wrap: break-word; min-width: 0;">
             <div class="metric-label">Avg. Sale</div>
-            <div class="metric-value" id="m-avg">₦0</div>
+            <div class="metric-value" id="m-avg" style="font-size: clamp(1.2rem, 4vw, var(--text-2xl));">₦0</div>
             <div class="metric-sub">Per transaction</div>
             <div class="metric-icon" style="background:var(--color-warning-light);color:var(--color-warning);">
               <i class="fa-solid fa-chart-bar"></i>
             </div>
           </div>
         </div>
-        <div class="col-6 col-md-4 col-lg-2">
-          <div class="metric-card">
+        <div class="col-12 col-sm-6 col-lg-2">
+          <div class="metric-card" style="word-wrap: break-word; min-width: 0;">
             <div class="metric-label">VAT Collected</div>
-            <div class="metric-value" id="m-vat">₦0</div>
+            <div class="metric-value" id="m-vat" style="font-size: clamp(1.2rem, 4vw, var(--text-2xl));">₦0</div>
             <div class="metric-sub">7.5% on sales</div>
             <div class="metric-icon" style="background:var(--color-info-light);color:var(--color-info);">
               <i class="fa-solid fa-percent"></i>
             </div>
           </div>
         </div>
-        <div class="col-6 col-md-4 col-lg-2">
-          <div class="metric-card">
+        <div class="col-12 col-sm-6 col-lg-2">
+          <div class="metric-card" style="word-wrap: break-word; min-width: 0;">
             <div class="metric-label">Items Sold</div>
-            <div class="metric-value" id="m-items">0</div>
+            <div class="metric-value" id="m-items" style="font-size: clamp(1.2rem, 4vw, var(--text-2xl));">0</div>
             <div class="metric-sub">Total units</div>
             <div class="metric-icon" style="background:var(--color-primary-light);color:var(--color-primary);">
               <i class="fa-solid fa-boxes-stacked"></i>
             </div>
           </div>
         </div>
-        <div class="col-6 col-md-4 col-lg-2">
-          <div class="metric-card">
+        <div class="col-12 col-sm-6 col-lg-2">
+          <div class="metric-card" style="word-wrap: break-word; min-width: 0;">
             <div class="metric-label">Discounts</div>
-            <div class="metric-value" id="m-discount">₦0</div>
+            <div class="metric-value" id="m-discount" style="font-size: clamp(1.2rem, 4vw, var(--text-2xl));">₦0</div>
             <div class="metric-sub">Total given</div>
             <div class="metric-icon" style="background:var(--color-danger-light);color:var(--color-danger);">
               <i class="fa-solid fa-tag"></i>
@@ -1347,16 +1347,46 @@ const Reports = (() => {
       renderAll();
     });
 
-    // Prevent export buttons from doing anything (they're disabled but just in case)
-    document.querySelectorAll('.export-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        Utils.toastInfo(
-          'Export Unavailable',
-          'CSV and PDF exports are available in the Production Version.'
-        );
+         // Active CSV Exporter Engine
+    document.getElementById('active-export-csv')?.addEventListener('click', () => {
+      const activeSales = getFilteredSales();
+      if (!activeSales || activeSales.length === 0) {
+        Utils.toastWarning('No Data', 'There are no transactions to export for this period.');
+        return;
+      }
+      
+      let csvContent = "data:text/csv;charset=utf-8,ID,Date,Payment Method,Subtotal,VAT,Discount,Total,Items Count\r\n";
+      
+      activeSales.forEach(sale => {
+        const itemCount = sale.items ? sale.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
+        const row = [
+          sale.id || '',
+          sale.createdAt || '',
+          sale.paymentMethod || 'Cash',
+          sale.subtotal || 0,
+          sale.vatAmount || 0,
+          sale.discountAmount || 0,
+          sale.total || 0,
+          itemCount
+        ].join(",");
+        csvContent += row + "\r\n";
       });
+
+      const encodedUri = encodeURI(csvContent);
+      const downloadAnchor = document.createElement("a");
+      downloadAnchor.setAttribute("href", encodedUri);
+      downloadAnchor.setAttribute("download", `TradeFlow_Sales_Report_Period_${currentPeriod}.csv`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      document.body.removeChild(downloadAnchor);
+      Utils.toastSuccess('Success', 'CSV report downloaded.');
     });
+
+    // Active Print/PDF Engine
+    document.getElementById('active-export-pdf')?.addEventListener('click', () => {
+      window.print();
+    });
+
 
     // Re-render charts when theme changes
     const observer = new MutationObserver(() => renderAll());

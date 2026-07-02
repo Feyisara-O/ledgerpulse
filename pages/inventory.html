@@ -76,6 +76,113 @@
     }
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
+        /* ========================================================================== */
+    /* ✅ RESPONSIVE ENGINE OVERRIDE AT THE BOTTOM OF YOUR STYLE TAG              */
+    /* ========================================================================== */
+    @media (max-width: 767px) {
+      /* Stack layout panels clean and vertically */
+      .card-body > div {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: var(--space-3) !important;
+      }
+      
+      .card-body .input-group,
+      .card-body select {
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+
+      /* Un-dock table elements so rows flow as adaptive cards */
+      #alerts-table, #movement-table,
+      #alerts-table thead, #movement-table thead,
+      #alerts-table tbody, #movement-table tbody,
+      #alerts-table th, #movement-table th,
+      #alerts-table td, #movement-table td,
+      #alerts-table tr, #movement-table tr { 
+        display: block !important; 
+      }
+      
+      /* Hide top header descriptions row cleanly */
+      #alerts-table thead tr,
+      #movement-table thead tr { 
+        position: absolute !important;
+        top: -9999px;
+        left: -9999px;
+      }
+      
+      /* Format individual table lines as single mobile row elements */
+      #alerts-table tbody tr,
+      #movement-table tbody tr {
+        border: 1px solid var(--border-color) !important;
+        border-radius: var(--radius-md) !important;
+        margin-bottom: var(--space-3) !important;
+        padding: var(--space-3) !important;
+        background: var(--bg-surface) !important;
+      }
+      
+      #alerts-table td,
+      #movement-table td {
+        border: none !important;
+        padding: var(--space-1) 0 !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        font-size: var(--text-sm) !important;
+      }
+
+      /* ========================================================================== */
+      /* ✅ STOCK ALERTS MOBILE LABELS                                              */
+      /* ========================================================================== */
+      #alerts-table td:nth-of-type(1)::before { content: "Product:"; font-weight: 600; color: var(--text-muted); }
+      #alerts-table td:nth-of-type(2)::before { content: "SKU:"; font-weight: 600; color: var(--text-muted); }
+      #alerts-table td:nth-of-type(3)::before { content: "Current Stock:"; font-weight: 600; color: var(--text-muted); }
+
+      /* ========================================================================== */
+      /* ✅ STOCK MOVEMENT MOBILE LABELS                                            */
+      /* ========================================================================== */
+      #movement-table td:nth-of-type(1)::before { content: "Date:"; font-weight: 600; color: var(--text-muted); }
+      #movement-table td:nth-of-type(2)::before { content: "Product:"; font-weight: 600; color: var(--text-muted); }
+      #movement-table td:nth-of-type(3)::before { content: "Type:"; font-weight: 600; color: var(--text-muted); }
+      #movement-table td:nth-of-type(4)::before { content: "Quantity:"; font-weight: 600; color: var(--text-muted); }
+      #movement-table td:nth-of-type(5)::before { content: "Reference:"; font-weight: 600; color: var(--text-muted); }
+
+    /* ========================================================================== */
+    /* ✅ VIEWPORT BOUNDARY MANAGEMENT ENGINE                                    */
+    /* ========================================================================== */
+    @media screen and (max-width: 767px) {
+      /* Force parent containers to stay locked to the phone screen width */
+      html, body, .app-shell, .app-main, .page-content, .card, .card-body {
+        max-width: 100% !important;
+        width: 100% !important;
+        overflow-x: hidden !important; /* Block global side scrolling */
+        box-sizing: border-box !important;
+      }
+
+      /* Create a dedicated, scrollable window wrapper for the wide tables */
+      .table-mobile-scroll-wrapper {
+        width: 100% !important;
+        overflow-x: auto !important; /* Enable native horizontal swiping */
+        -webkit-overflow-scrolling: touch; /* Smooth momentum scroll on iOS */
+        margin-bottom: var(--space-4, 20px) !important;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: var(--radius-md, 8px);
+      }
+
+      /* Keep the table layout wide enough so columns have full breathing room */
+      #alerts-table, #movement-table {
+        min-width: 600px !important; /* Guarantees words never get squished or narrow */
+        table-layout: auto !important;
+      }
+
+      #alerts-table td, #movement-table td {
+        white-space: nowrap !important; /* Stops random ugly text wrapping mid-word */
+        padding: 12px 16px !important;
+      }
+    }
+
+
+
   </style>
 </head>
 <body>
