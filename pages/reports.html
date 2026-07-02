@@ -236,6 +236,10 @@
             <i class="fa-solid fa-file-csv"></i>
             <span class="d-none d-sm-inline">Export CSV</span>
           </button>
+          <button class="btn btn-outline" id="active-export-png">
+            <i class="fa-solid fa-image"></i>
+            <span class="d-none d-sm-inline">Export PNG</span>
+          </button>
           <button class="btn btn-outline" id="active-export-pdf">
             <i class="fa-solid fa-file-pdf"></i>
             <span class="d-none d-sm-inline">Print PDF</span>
@@ -510,7 +514,7 @@
         <div class="card-header">
           <h3 class="card-title">Stock Value by Product</h3>
           <div style="display:flex;gap:var(--space-2);">
-            <button class="btn btn-outline export-btn btn-sm" disabled>
+            <button class="btn btn-outline btn-sm" id="export-inv-val-btn">
               <i class="fa-solid fa-file-csv"></i> Export
             </button>
           </div>
@@ -547,7 +551,7 @@
       <div class="card mb-5">
         <div class="card-header">
           <h3 class="card-title">Sales by Day</h3>
-          <button class="btn btn-outline export-btn btn-sm" disabled>
+          <button class="btn btn-outline btn-sm" id="export-daily-btn">
             <i class="fa-solid fa-file-csv"></i> Export
           </button>
         </div>
@@ -681,15 +685,22 @@ const Reports = (() => {
 
   // ── Render All ────────────────────────────────────────────────────────────
   function renderAll() {
-    const sales = getFilteredSales();
-    _set('reports-period-label', getPeriodLabel());
+    try {
+      const sales = getFilteredSales();
+      _set('reports-period-label', getPeriodLabel());
 
-    renderSummaryMetrics(sales);
-    renderCharts(sales);
-    renderTopProducts(sales);
-    renderInventoryValuation();
-    renderDailyBreakdown(sales);
-    renderInsights(sales);
+      renderSummaryMetrics(sales);
+      renderCharts(sales);
+      renderTopProducts(sales);
+      renderInventoryValuation();
+      renderDailyBreakdown(sales);
+      renderInsights(sales);
+    } catch (err) {
+      console.error('Reports renderAll failed:', err);
+      if (window.Utils?.toastError) {
+        Utils.toastError('Report Error', 'Could not refresh the report for this period.');
+      }
+    }
   }
 
   // ── 1. Summary Metrics ────────────────────────────────────────────────────
@@ -852,8 +863,7 @@ const Reports = (() => {
         }).join('');
       }
     }
-
-    // By revenue
+     // By revenue
     const revEl = document.getElementById('top-by-revenue');
     if (revEl) {
       if (topRev.length === 0) {
@@ -1349,37 +1359,148 @@ const Reports = (() => {
 
          // Active CSV Exporter Engine
     document.getElementById('active-export-csv')?.addEventListener('click', () => {
-      const activeSales = getFilteredSales();
-      if (!activeSales || activeSales.length === 0) {
-        Utils.toastWarning('No Data', 'There are no transactions to export for this period.');
-        return;
-      }
-      
-      let csvContent = "data:text/csv;charset=utf-8,ID,Date,Payment Method,Subtotal,VAT,Discount,Total,Items Count\r\n";
-      
-      activeSales.forEach(sale => {
-        const itemCount = sale.items ? sale.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
-        const row = [
-          sale.id || '',
-          sale.createdAt || '',
-          sale.paymentMethod || 'Cash',
-          sale.subtotal || 0,
-          sale.vatAmount || 0,
-          sale.discountAmount || 0,
-          sale.total || 0,
-          itemCount
-        ].join(",");
-        csvContent += row + "\r\n";
-      });
+      try {
+        const activeSales = getFilteredSales();
+        if (!activeSales || activeSales.length === 0) {
+          Utils.toastWarning('No Data', 'There are no transactions to export for this period.');
+          return;
+        }
 
-      const encodedUri = encodeURI(csvContent);
-      const downloadAnchor = document.createElement("a");
-      downloadAnchor.setAttribute("href", encodedUri);
-      downloadAnchor.setAttribute("download", `TradeFlow_Sales_Report_Period_${currentPeriod}.csv`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      document.body.removeChild(downloadAnchor);
-      Utils.toastSuccess('Success', 'CSV report downloaded.');
+        let csvContent = "data:text/csv;charset=utf-8,ID,Date,Payment Method,Subtotal,VAT,Discount,Total,Items Count\r\n";
+
+        activeSales.forEach(sale => {
+          const itemCount = sale.items ? sale.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
+          const row = [
+            sale.id || '',
+            sale.createdAt || '',
+            sale.paymentMethod || 'Cash',
+            sale.subtotal || 0,
+            sale.vatAmount || 0,
+            sale.discountAmount || 0,
+            sale.total || 0,
+            itemCount
+          ].join(",");
+          csvContent += row + "\r\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const downloadAnchor = document.createElement("a");
+        downloadAnchor.setAttribute("href", encodedUri);
+        downloadAnchor.setAttribute("download", `TradeFlow_Sales_Report_Period_${currentPeriod}.csv`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        document.body.removeChild(downloadAnchor);
+        Utils.toastSuccess('Success', 'CSV report downloaded.');
+      } catch (err) {
+        console.error('CSV export failed:', err);
+        Utils.toastError('Export Failed', 'Could not generate the CSV file. Please try again.');
+      }
+    });
+
+    // Active PNG Exporter Engine — composes the report's charts + KPIs into one image
+    document.getElementById('active-export-png')?.addEventListener('click', () => {
+      try {
+        const activeSales = getFilteredSales();
+        if (!activeSales || activeSales.length === 0) {
+          Utils.toastWarning('No Data', 'There are no transactions to export for this period.');
+          return;
+        }
+
+        const chartCanvases = [
+          { canvas: document.getElementById('revenue-line-chart'),  title: 'Revenue Over Time' },
+          { canvas: document.getElementById('payment-donut-chart'), title: 'Payment Breakdown' },
+          { canvas: document.getElementById('volume-bar-chart'),    title: 'Daily Transaction Volume' },
+          { canvas: document.getElementById('top-products-chart'),  title: 'Top 10 Products — Revenue' },
+        ].filter(c => c.canvas);
+
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const bgColor   = isDark ? '#0f172a' : '#ffffff';
+        const textColor = isDark ? '#f1f5f9' : '#0f172a';
+        const muted     = isDark ? '#94a3b8' : '#64748b';
+
+        // Layout constants
+        const pad      = 32;
+        const headerH  = 110;
+        const kpiH     = 90;
+        const chartW   = 760;
+        const chartH   = 320;
+        const cols     = 2;
+        const rows     = Math.ceil(chartCanvases.length / cols) || 1;
+        const totalW   = pad * 2 + (chartW * cols) + pad * (cols - 1);
+        const totalH   = headerH + kpiH + pad + (chartH * rows) + pad * (rows + 1);
+
+        const out = document.createElement('canvas');
+        out.width  = totalW;
+        out.height = totalH;
+        const ctx  = out.getContext('2d');
+
+        // Background
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, totalW, totalH);
+
+        // Header
+        ctx.fillStyle = textColor;
+        ctx.font = 'bold 26px Arial, sans-serif';
+        ctx.fillText('TradeFlow — Sales Report', pad, 42);
+
+        ctx.fillStyle = muted;
+        ctx.font = '14px Arial, sans-serif';
+        ctx.fillText(getPeriodLabel(), pad, 68);
+        ctx.fillText('Generated ' + new Date().toLocaleString('en-NG'), pad, 88);
+
+        // KPI summary strip
+        const s = Utils.summariseSales(activeSales);
+        const kpis = [
+          ['Revenue',      Utils.formatCurrency(s.totalRevenue, true)],
+          ['Transactions', Utils.formatNumber(s.transactions)],
+          ['Avg. Sale',    Utils.formatCurrency(s.avgTransaction, true)],
+          ['VAT',          Utils.formatCurrency(s.totalVAT, true)],
+          ['Items Sold',   Utils.formatNumber(s.totalItems)],
+        ];
+        const kpiW = totalW / kpis.length;
+        kpis.forEach((k, i) => {
+          const x = i * kpiW + pad / 2;
+          ctx.fillStyle = muted;
+          ctx.font = '11px Arial, sans-serif';
+          ctx.fillText(k[0].toUpperCase(), x, headerH + 20);
+          ctx.fillStyle = textColor;
+          ctx.font = 'bold 18px Arial, sans-serif';
+          ctx.fillText(k[1], x, headerH + 46);
+        });
+
+        // Charts grid
+        let cx = pad, cy = headerH + kpiH + pad;
+        chartCanvases.forEach((c, i) => {
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          const x = pad + col * (chartW + pad);
+          const y = cy + row * (chartH + pad);
+
+          ctx.fillStyle = isDark ? '#1e293b' : '#f8fafc';
+          ctx.fillRect(x, y, chartW, chartH);
+
+          ctx.fillStyle = textColor;
+          ctx.font = 'bold 14px Arial, sans-serif';
+          ctx.fillText(c.title, x + 12, y + 24);
+
+          try {
+            ctx.drawImage(c.canvas, x + 12, y + 36, chartW - 24, chartH - 50);
+          } catch (drawErr) {
+            console.error('Could not draw chart onto export canvas:', drawErr);
+          }
+        });
+
+        const link = document.createElement('a');
+        link.download = `TradeFlow_Sales_Report_Period_${currentPeriod}.png`;
+        link.href = out.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        Utils.toastSuccess('Success', 'PNG report downloaded.');
+      } catch (err) {
+        console.error('PNG export failed:', err);
+        Utils.toastError('Export Failed', 'Could not generate the PNG image. Please try again.');
+      }
     });
 
     // Active Print/PDF Engine
@@ -1387,6 +1508,56 @@ const Reports = (() => {
       window.print();
     });
 
+    // Generic table-to-CSV helper for the sub-section export buttons
+    function exportTableToCsv(tableId, filename) {
+      try {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        const rows = Array.from(table.querySelectorAll('tr'));
+        const dataRows = rows.filter(r => !r.querySelector('.empty-state'));
+        if (dataRows.length === 0) {
+          Utils.toastWarning('No Data', 'There is nothing to export for this table.');
+          return;
+        }
+
+        const csvLines = dataRows.map(row => {
+          const cells = Array.from(row.querySelectorAll('th, td'));
+          return cells.map(cell => {
+            let text = cell.innerText || cell.textContent || '';
+            text = text.replace(/\s+/g, ' ').trim();
+            text = text.replace(/"/g, '""');
+            return `"${text}"`;
+          }).join(',');
+        });
+
+        const csvContent = 'data:text/csv;charset=utf-8,' + csvLines.join('\r\n');
+        const encodedUri = encodeURI(csvContent);
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute('href', encodedUri);
+        downloadAnchor.setAttribute('download', filename);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        document.body.removeChild(downloadAnchor);
+        Utils.toastSuccess('Success', 'CSV downloaded.');
+      } catch (err) {
+        console.error('Table CSV export failed:', err);
+        Utils.toastError('Export Failed', 'Could not export this table. Please try again.');
+      }
+    }
+
+    // Stock Value by Product — table export
+    document.getElementById('export-inv-val-btn')?.addEventListener('click', () => {
+      const table = document.getElementById('inv-val-tbody')?.closest('table');
+      if (!table) return;
+      exportTableToCsv(table.id || (table.id = 'inv-val-table'), 'TradeFlow_Stock_Value_by_Product.csv');
+    });
+
+    // Sales by Day — table export
+    document.getElementById('export-daily-btn')?.addEventListener('click', () => {
+      const table = document.getElementById('daily-tbody')?.closest('table');
+      if (!table) return;
+      exportTableToCsv(table.id || (table.id = 'daily-breakdown-table'), `TradeFlow_Sales_by_Day_Period_${currentPeriod}.csv`);
+    });
 
     // Re-render charts when theme changes
     const observer = new MutationObserver(() => renderAll());
