@@ -1,10 +1,10 @@
 /**
- * TradeFlow Service Worker
+ * LedgerPulse Service Worker
  * Handles caching and offline support for the PWA
  * Strategy: Cache-First for static assets, Network-First for pages
  */
 
-const CACHE_NAME = 'tradeflow-v1.0.0';
+const CACHE_NAME = 'ledgerpulse-v1.0.0';
 const OFFLINE_PAGE = 'offline.html';
 
 // Static assets matching your exact folder tree structure
@@ -38,7 +38,7 @@ const PRECACHE_ASSETS = [
 
 // ─── Install Event ─────────────────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
-  console.log('[ServiceWorker] Installing TradeFlow v1.0.0...');
+  console.log('[ServiceWorker] Installing LedgerPulse v1.0.0...');
 
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {

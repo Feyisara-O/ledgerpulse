@@ -1,5 +1,5 @@
 /**
- * TradeFlow — Theme Manager
+ * LedgerPulse — Theme Manager
  * ==========================
  * Manages light/dark mode toggling, persistence via localStorage,
  * and DOM application of the correct theme.

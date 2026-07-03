@@ -1,5 +1,5 @@
 /**
- * TradeFlow — Storage Manager
+ * LedgerPulse — Storage Manager
  * ============================
  * Centralised LocalStorage interface for the entire application.
  * All data persistence operations must go through this module.
@@ -83,7 +83,7 @@ const Storage = (() => {
   }
 
   /**
-   * Clear ALL TradeFlow keys from localStorage (full reset).
+   * Clear ALL LedgerPulse keys from localStorage (full reset).
    * Does NOT remove unrelated localStorage entries.
    */
   function clearAll() {
@@ -413,7 +413,7 @@ const Storage = (() => {
       {
         id:       generateId('usr'),
         name:     'Admin User',
-        email:    'admin@tradeflow.ng',
+        email:    'admin@ledgerpulse.ng',
         password: 'admin123',       // In production this would be hashed
         role:     'admin',
         active:   true,
@@ -422,7 +422,7 @@ const Storage = (() => {
       {
         id:       generateId('usr'),
         name:     'Sales Staff',
-        email:    'staff@tradeflow.ng',
+        email:    'staff@ledgerpulse.ng',
         password: 'staff123',
         role:     'staff',
         active:   true,

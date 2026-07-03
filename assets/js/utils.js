@@ -1,5 +1,5 @@
 /**
- * TradeFlow — Utilities
+ * LedgerPulse — Utilities
  * ======================
  * Shared helper functions used across all modules.
  *

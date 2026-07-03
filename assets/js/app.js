@@ -1,5 +1,5 @@
 /**
- * TradeFlow — App Bootstrapper
+ * LedgerPulse — App Bootstrapper
  * ==============================
  * Entry point for all authenticated pages (NOT the login page).
  * Responsibilities:
@@ -120,7 +120,7 @@ const App = (() => {
       <a href="dashboard.html" class="sidebar-brand">
         <div class="sidebar-logo-icon">TF</div>
         <div class="sidebar-brand-text">
-          <div class="sidebar-brand-name">TradeFlow</div>
+          <div class="sidebar-brand-name">LedgerPulse</div>
           <div class="sidebar-brand-tagline">Management Platform</div>
         </div>
       </a>
