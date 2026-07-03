@@ -2,7 +2,7 @@
   "name": "TradeFlow — Inventory & Sales Platform",
   "short_name": "TradeFlow",
   "description": "Data-Driven Inventory and Sales Management Platform for Nigerian SMEs",
-  "start_url": "./index.html",
+  "start_url": "index.html",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0f172a",
@@ -48,14 +48,14 @@
       "name": "Dashboard",
       "short_name": "Dashboard",
       "description": "View sales dashboard",
-      "url": "./pages/dashboard.html",
+      "url": "pages/dashboard.html",
       "icons": [{ "src": "assets/icons/icon-96.png", "sizes": "96x96" }]
     },
     {
       "name": "Point of Sale",
       "short_name": "POS",
       "description": "Open the POS terminal",
-      "url": "./pages/pos.html",
+      "url": "pages/pos.html",
       "icons": [{ "src": "assets/icons/icon-96.png", "sizes": "96x96" }]
     }
   ]

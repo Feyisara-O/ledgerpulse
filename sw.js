@@ -5,31 +5,34 @@
  */
 
 const CACHE_NAME = 'tradeflow-v1.0.0';
-const OFFLINE_PAGE = './offline.html';
+const OFFLINE_PAGE = 'offline.html';
 
-// Static assets to pre-cache on install
+// Static assets matching your exact folder tree structure
 const PRECACHE_ASSETS = [
-  './index.html',
-  './offline.html',
-  './manifest.json',
-  './assets/css/theme.css',
-  './assets/js/storage.js',
-  './assets/js/theme.js',
-  './assets/js/utils.js',
-  './assets/js/app.js',
-  './pages/dashboard.html',
-  './pages/products.html',
-  './pages/inventory.html',
-  './pages/pos.html',
-  './pages/sales.html',
-  './pages/reports.html',
-  './pages/settings.html',
-  // Bootstrap 5 CDN (cached for offline)
+  'index.html',
+  'offline.html',
+  'manifest.json',
+  'assets/css/theme.css',
+  'assets/js/storage.js',
+  'assets/js/theme.js',
+  'assets/js/utils.js',
+  'assets/js/app.js',
+  'assets/icons/icon-72.png',
+  'assets/icons/icon-96.png',
+  'assets/icons/icon-128.png',
+  'assets/icons/icon-192.png',
+  'assets/icons/icon-512.png',
+  'pages/dashboard.html',
+  'pages/products.html',
+  'pages/inventory.html',
+  'pages/pos.html',
+  'pages/sales.html',
+  'pages/reports.html',
+  'pages/settings.html',
+  // External CDNs (cached for offline performance)
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js',
-  // Font Awesome
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css',
-  // Chart.js
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'
 ];
 
@@ -40,7 +43,6 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[ServiceWorker] Pre-caching assets...');
-      // Use addAll for critical assets; ignore failures on CDN resources
       return cache.addAll(PRECACHE_ASSETS).catch((err) => {
         console.warn('[ServiceWorker] Some assets failed to pre-cache:', err);
       });
@@ -91,14 +93,16 @@ self.addEventListener('fetch', (event) => {
  * @returns {Promise<Response>}
  */
 async function handleFetch(request) {
-  const url = new URL(request.url);
-
   // Navigation requests: Network-first, fallback to cache, then offline page
   if (request.mode === 'navigate') {
     try {
       const networkResponse = await fetch(request);
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(request, networkResponse.clone());
+      
+      // Safety Validation Check: Only cache successful standard web responses
+      if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(request, networkResponse.clone());
+      }
       return networkResponse;
     } catch {
       const cached = await caches.match(request);
@@ -110,7 +114,7 @@ async function handleFetch(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
 
-  // Not in cache — fetch from network and cache it
+  // Not in cache — fetch from network and cache it safely
   try {
     const networkResponse = await fetch(request);
     if (networkResponse && networkResponse.status === 200) {
@@ -119,7 +123,7 @@ async function handleFetch(request) {
     }
     return networkResponse;
   } catch {
-    // Network failed — return offline page for HTML, empty for others
+    // Network failed — return offline fallback page for HTML requests, generic error for others
     if (request.headers.get('accept')?.includes('text/html')) {
       return caches.match(OFFLINE_PAGE);
     }
