@@ -2014,45 +2014,101 @@
         if (next) next.focus();
       });
     }
-
-
+    
+        // =========================================================================
+    // 10. BOOT (CORRECTED)
     // =========================================================================
-    // 10. BOOT
-    //
-    // DOMContentLoaded entry point.
-    // Decides which screen to display based on LocalStorage state.
-    // Binds all event listeners.
-    // =========================================================================
-
     document.addEventListener('DOMContentLoaded', function() {
 
-      // -----------------------------------------------------------------
-      // A. Apply saved theme before anything renders (prevents flash)
-      // -----------------------------------------------------------------
+      // 1. Apply saved theme before anything renders (prevents flash)
       initTheme();
 
-      // -----------------------------------------------------------------
-      // B. Bind the theme toggle button
-      // -----------------------------------------------------------------
+      // 2. Bind the theme toggle button
       var themeBtn = document.getElementById('themeBtn');
       if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
 
-      // -----------------------------------------------------------------
-      // C. If already logged in, skip straight to dashboard
-      // -----------------------------------------------------------------
+      // 3. If already logged in, skip straight to dashboard
       if (sessionExists()) {
         window.location.href = 'pages/dashboard.html';
         return;
       }
 
       // -----------------------------------------------------------------
-      // D. Check for existing administrator account
+      // GLOBAL BINDINGS (Now runs every single time, fixing the freeze!)
+      // -----------------------------------------------------------------
+      
+      // --- Login Screen Listeners ---
+      var btnSignIn = document.getElementById('btnSignIn');
+      if (btnSignIn) btnSignIn.addEventListener('click', handleSignIn);
+
+      focusOnEnter('loginEmail', 'loginPw');
+      onEnter('loginPw', handleSignIn);
+      bindPasswordToggle('toggleLoginPw', 'loginPw', 'iconLoginPw');
+
+      bindAutoClear([
+        ['errLoginEmail', 'loginEmail'],
+        ['errLoginPw',    'loginPw']
+      ], 'loginAlert');
+
+      var btnForgot = document.getElementById('btnForgot');
+      if (btnForgot) {
+        btnForgot.addEventListener('click', function() {
+          showScreen('forgot');
+        });
+      }
+
+      var btnForgotBack = document.getElementById('btnForgotBack');
+      if (btnForgotBack) {
+        btnForgotBack.addEventListener('click', function() {
+          showLoginScreen();
+        });
+      }
+
+      // --- Setup Wizard Screen Listeners ---
+      var btnNext = document.getElementById('btnStepOneNext');
+      if (btnNext) btnNext.addEventListener('click', handleStepOneNext);
+
+      focusOnEnter('bizName', 'adminName');
+      onEnter('adminName', handleStepOneNext);
+
+      bindAutoClear([
+        ['errBizName',   'bizName'],
+        ['errAdminName', 'adminName']
+      ], 'setupAlertError');
+
+      var btnBack = document.getElementById('btnStepTwoBack');
+      if (btnBack) btnBack.addEventListener('click', goToStepOne);
+
+      var btnCreate = document.getElementById('btnCreateAccount');
+      if (btnCreate) btnCreate.addEventListener('click', handleCreateAccount);
+
+      bindPasswordToggle('toggleSetupPw',  'setupPw',  'iconSetupPw');
+      bindPasswordToggle('toggleSetupCpw', 'setupCpw', 'iconSetupCpw');
+
+      var pwInput = document.getElementById('setupPw');
+      if (pwInput) {
+        pwInput.addEventListener('input', function(e) {
+          updateStrengthBar(e.target.value);
+        });
+      }
+
+      focusOnEnter('setupEmail', 'setupPw');
+      focusOnEnter('setupPw',    'setupCpw');
+      onEnter('setupCpw', handleCreateAccount);
+
+      bindAutoClear([
+        ['errSetupEmail', 'setupEmail'],
+        ['errSetupPw',    'setupPw'],
+        ['errSetupCpw',   'setupCpw']
+      ], 'setupAlertError');
+
+      // -----------------------------------------------------------------
+      // ROUTING FLOW CONTROLLER
       // -----------------------------------------------------------------
       var hasAdmin = adminExists();
 
       if (hasAdmin) {
-        // ── RETURNING USER: show login screen ──────────────────────────
-
+        // Returning User routing
         showLoginScreen();
 
         // Pre-fill email if Remember Me was used
@@ -2063,91 +2119,14 @@
           var remBox = document.getElementById('rememberMe');
           if (remBox) remBox.checked = true;
         }
-
-        // Bind login button
-        var btnSignIn = document.getElementById('btnSignIn');
-        if (btnSignIn) btnSignIn.addEventListener('click', handleSignIn);
-
-        // Enter key flow: email → password → submit
-        focusOnEnter('loginEmail', 'loginPw');
-        onEnter('loginPw', handleSignIn);
-
-        // Password toggle
-        bindPasswordToggle('toggleLoginPw', 'loginPw', 'iconLoginPw');
-
-        // Auto-clear field errors on input
-        bindAutoClear([
-          ['errLoginEmail', 'loginEmail'],
-          ['errLoginPw',    'loginPw']
-        ], 'loginAlert');
-
-        // Forgot password → show forgot screen
-        var btnForgot = document.getElementById('btnForgot');
-        if (btnForgot) {
-          btnForgot.addEventListener('click', function() {
-            showScreen('forgot');
-          });
-        }
-
-        // Back from forgot screen
-        var btnForgotBack = document.getElementById('btnForgotBack');
-        if (btnForgotBack) {
-          btnForgotBack.addEventListener('click', function() {
-            showLoginScreen();
-          });
-        }
-
       } else {
-        // ── FIRST LAUNCH: show setup screen ────────────────────────────
-
+        // First Launch routing
         showScreen('setup');
-
-        // Step 1 bindings
-        var btnNext = document.getElementById('btnStepOneNext');
-        if (btnNext) btnNext.addEventListener('click', handleStepOneNext);
-
-        // Enter key flow for step 1
-        focusOnEnter('bizName', 'adminName');
-        onEnter('adminName', handleStepOneNext);
-
-        // Auto-clear step 1 field errors
-        bindAutoClear([
-          ['errBizName',   'bizName'],
-          ['errAdminName', 'adminName']
-        ], 'setupAlertError');
-
-        // Step 2 bindings
-        var btnBack = document.getElementById('btnStepTwoBack');
-        if (btnBack) btnBack.addEventListener('click', goToStepOne);
-
-        var btnCreate = document.getElementById('btnCreateAccount');
-        if (btnCreate) btnCreate.addEventListener('click', handleCreateAccount);
-
-        // Password toggles for step 2
-        bindPasswordToggle('toggleSetupPw',  'setupPw',  'iconSetupPw');
-        bindPasswordToggle('toggleSetupCpw', 'setupCpw', 'iconSetupCpw');
-
-        // Password strength bar — updates as user types
-        var pwInput = document.getElementById('setupPw');
-        if (pwInput) {
-          pwInput.addEventListener('input', function(e) {
-            updateStrengthBar(e.target.value);
-          });
-        }
-         // Enter key flow for step 2
-        focusOnEnter('setupEmail', 'setupPw');
-        focusOnEnter('setupPw',    'setupCpw');
-        onEnter('setupCpw', handleCreateAccount);
-
-        // Auto-clear step 2 field errors
-        bindAutoClear([
-          ['errSetupEmail', 'setupEmail'],
-          ['errSetupPw',    'setupPw'],
-          ['errSetupCpw',   'setupCpw']
-        ], 'setupAlertError');
       }
 
     }); // end DOMContentLoaded
+
+
 
   </script>
 
