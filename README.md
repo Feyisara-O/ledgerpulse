@@ -88,3 +88,18 @@ LedgerPulse/
 ├── manifest.json     # PWA operational descriptor and installation properties
 ├── sw.js             # Service Worker cache control script
 └── README.md         # Academic and system deployment documentation
+
+---
+
+## 👨‍💻 Academic Authorship
+
+- **Author:** Mofeyisara Okunola
+- **Role:** Undergraduate Information Technology Student
+- **Institution:** National Open University of Nigeria (NOUN)
+- **Project Scope:** Undergraduate Final Year Research Project
+
+---
+
+## 📄 License & Disclaimer
+
+This software system was developed strictly for academic evaluation as a Final Year Project for the completion of a Bachelor of Science degree in Information Technology. All rights reserved.
